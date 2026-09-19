@@ -151,7 +151,11 @@ client.on('messageCreate', async message => {
                 [
                     '✨ **من هنا تتحكم في الروم الصوتي الخاص بك بالكامل** ✨',
                     '',
-                    'استخدم الأزرار بالأسفل لإدارة غرفتك بكل سهولة.'
+                    '`✏️` تغيير الاسم  •  `👥` حد الأعضاء  •  `🔒` الخصوصية  •  `💬` حالة الروم',
+                    '`ℹ️` معلومات  •  `🟢` الثقة  •  `👤` سحب الثقة  •  `📨` دعوة',
+                    '`➡️` طلب انضمام  •  `🔇` وضع الاجتماع  •  `⚡` طرد  •  `⛔` حظر',
+                    '`✅` رفع الحظر  •  `👑` أخذ الملكية  •  `🔄` نقل الملكية  •  `⏳` غرفة الانتظار',
+                    '`🌐` تغيير المنطقة  •  `🎨` لون الحاوية  •  `⚙️` داشبورد  •  `🗑️` حذف الروم'
                 ].join('\n')
             )
             .setThumbnail(
@@ -171,25 +175,21 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_rename')
-                .setLabel('تغيير الاسم')
                 .setEmoji('✏️')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_limit')
-                .setLabel('حد الأعضاء')
                 .setEmoji('👥')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_lock')
-                .setLabel('الخصوصية')
                 .setEmoji('🔒')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_status')
-                .setLabel('حالة الروم')
                 .setEmoji('💬')
                 .setStyle(ButtonStyle.Secondary)
         );
@@ -203,25 +203,21 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_info')
-                .setLabel('معلومات')
                 .setEmoji('ℹ️')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_trust')
-                .setLabel('الثقة')
                 .setEmoji('🟢')
                 .setStyle(ButtonStyle.Success),
 
             new ButtonBuilder()
                 .setCustomId('t_untrust')
-                .setLabel('سحب الثقة')
                 .setEmoji('👤')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_invite')
-                .setLabel('دعوة')
                 .setEmoji('📨')
                 .setStyle(ButtonStyle.Primary)
         );
@@ -235,25 +231,21 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_request')
-                .setLabel('طلب انضمام')
                 .setEmoji('➡️')
                 .setStyle(ButtonStyle.Primary),
 
             new ButtonBuilder()
                 .setCustomId('t_meeting')
-                .setLabel('وضع الاجتماع')
                 .setEmoji('🔇')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_kick')
-                .setLabel('طرد')
                 .setEmoji('⚡')
                 .setStyle(ButtonStyle.Danger),
 
             new ButtonBuilder()
                 .setCustomId('t_ban')
-                .setLabel('حظر')
                 .setEmoji('⛔')
                 .setStyle(ButtonStyle.Danger)
         );
@@ -267,25 +259,21 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_unban')
-                .setLabel('رفع الحظر')
                 .setEmoji('✅')
                 .setStyle(ButtonStyle.Success),
 
             new ButtonBuilder()
                 .setCustomId('t_claim')
-                .setLabel('أخذ الملكية')
                 .setEmoji('👑')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_owner')
-                .setLabel('نقل الملكية')
                 .setEmoji('🔄')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_bitrate')
-                .setLabel('غرفة الانتظار')
                 .setEmoji('⏳')
                 .setStyle(ButtonStyle.Secondary)
         );
@@ -299,25 +287,21 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_region')
-                .setLabel('تغيير المنطقة')
                 .setEmoji('🌐')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_color')
-                .setLabel('لون الحاوية')
                 .setEmoji('🎨')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_dashboard')
-                .setLabel('داشبورد')
                 .setEmoji('⚙️')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_delete')
-                .setLabel('حذف الروم')
                 .setEmoji('🗑️')
                 .setStyle(ButtonStyle.Danger)
         );
@@ -616,7 +600,6 @@ client.on('interactionCreate', async interaction => {
                             .setCustomId(
                                 `request_accept_${interaction.user.id}_${memberChannel.id}`
                             )
-                            .setLabel('السماح')
                             .setEmoji('✅')
                             .setStyle(
                                 ButtonStyle.Success
@@ -626,7 +609,6 @@ client.on('interactionCreate', async interaction => {
                             .setCustomId(
                                 `request_deny_${interaction.user.id}_${memberChannel.id}`
                             )
-                            .setLabel('رفض')
                             .setEmoji('❌')
                             .setStyle(
                                 ButtonStyle.Danger
