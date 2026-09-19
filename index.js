@@ -11,21 +11,19 @@ const {
     TextInputBuilder, 
     TextInputStyle 
 } = require('discord.js');
-const http = require('http');
+const express = require('express'); // استخدام express لضمان استجابة البورت في Render
 require('dotenv').config();
 
-// إنشاء خادم ويب مصغر لضمان استمرار عمل البوت 24/7 على Render Web Service
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot is running successfully!');
+const app = express();
+app.get('/', (req, res) => {
+    res.send('Bot is active and running!');
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+app.listen(PORT, () => {
     console.log(`🌍 Server is listening on port ${PORT}`);
 });
 
-// تهيئة بوت ديسكورد
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -35,7 +33,6 @@ const client = new Client({
     ]
 });
 
-// خريطة لتخزين ملكية الرومات (ChannelID -> OwnerID)
 const roomOwners = new Map();
 const CREATOR_CHANNEL_ID = process.env.CREATOR_CHANNEL_ID;
 
@@ -43,18 +40,16 @@ client.once('ready', () => {
     console.log(`✅ تم تسجيل الدخول بنجاح باسم: ${client.user.tag}`);
 });
 
-// مراقبة الأحداث الصوتية (دخول وخروج)
 client.on('voiceStateUpdate', async (oldState, newState) => {
     const member = newState.member;
     const guild = newState.guild;
 
-    // 1. عند دخول المستخدم لروم الإنشاء الأساسي
     if (newState.channelId === CREATOR_CHANNEL_ID) {
         try {
             const voiceChannel = await guild.channels.create({
                 name: `🔊 | ${member.user.username}`,
                 type: ChannelType.GuildVoice,
-                parent: newState.channel.parent, // يُنشأ في نفس الفئة (Category)
+                parent: newState.channel.parent,
                 permissionOverwrites: [
                     {
                         id: guild.id,
@@ -73,30 +68,26 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
                 ],
             });
 
-            // حفظ مالك الروم
             roomOwners.set(voiceChannel.id, member.id);
-
-            // نقل المستخدم إلى رومه الجديد
             await member.voice.setChannel(voiceChannel);
 
-            // إرسال لوحة التحكم التفاعلية بالأزرار داخل الروم الصوتي
             const embed = new EmbedBuilder()
                 .setTitle('🎛️ لوحة تحكم الغرفة الصوتية')
                 .setDescription('مرحباً بك في غرفتك الخاصة! استخدم الأزرار أدناه للتحكم بكافة إعدادات الروم:')
                 .setColor('#ed4245')
                 .setFooter({ text: 'TempVoice System Professional' });
 
+            // استخدام أزرار بدون إيموجيات معقدة لتجنب خطأ الـ API
             const row1 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId(`lock_${voiceChannel.id}`).setLabel('قفل').setStyle(ButtonStyle.Danger).setEmoji('🔒'),
-                new ButtonBuilder().setCustomId(`unlock_${voiceChannel.id}`).setLabel('فتح').setStyle(ButtonStyle.Success).setEmoji('🔓'),
-                new ButtonBuilder().setCustomId(`name_${voiceChannel.id}`).setLabel('تغيير الاسم').setStyle(ButtonStyle.Secondary).setEmoji('✏️'),
-                new ButtonBuilder().setCustomId(`limit_${voiceChannel.id}`).setLabel('العدد').setStyle(ButtonStyle.Secondary).setEmoji('👥'),
-                new ButtonBuilder().setCustomId(`hide_${voiceChannel.id}`).setLabel('إخفاء').setStyle(ButtonStyle.Danger).setEmoji('👁️‍🗨️')
+                new ButtonBuilder().setCustomId(`lock_${voiceChannel.id}`).setLabel('قفل 🔒').setStyle(ButtonStyle.Danger),
+                new ButtonBuilder().setCustomId(`unlock_${voiceChannel.id}`).setLabel('فتح 🔓').setStyle(ButtonStyle.Success),
+                new ButtonBuilder().setCustomId(`name_${voiceChannel.id}`).setLabel('تعديل الاسم ✏️').setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId(`limit_${voiceChannel.id}`).setLabel('العدد 👥').setStyle(ButtonStyle.Secondary)
             );
 
             const row2 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId(`unhide_${voiceChannel.id}`).setLabel('إظهار').setStyle(ButtonStyle.Success).setEmoji('👁️'),
-                new ButtonBuilder().setCustomId(`kick_${voiceChannel.id}`).setLabel('طرد').setStyle(ButtonStyle.Danger).setEmoji('👢')
+                new ButtonBuilder().setCustomId(`hide_${voiceChannel.id}`).setLabel('إخفاء 👁️‍🗨️').setStyle(ButtonStyle.Danger),
+                new ButtonBuilder().setCustomId(`unhide_${voiceChannel.id}`).setLabel('إظهار 👁️').setStyle(ButtonStyle.Success)
             );
 
             await voiceChannel.send({ embeds: [embed], components: [row1, row2] });
@@ -106,7 +97,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 
-    // 2. الحذف التلقائي للروم عند خروج الجميع منه
     if (oldState.channel && oldState.channel.id !== CREATOR_CHANNEL_ID) {
         const oldChannel = oldState.channel;
         if (roomOwners.has(oldChannel.id) && oldChannel.members.size === 0) {
@@ -116,14 +106,15 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
     }
 });
 
-// التعامل مع الأزرار والنوافذ المنبثقة
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
-        const [action, channelId] = interaction.customId.split('_');
+        const parts = interaction.customId.split('_');
+        const action = parts[0];
+        const channelId = parts.slice(1).join('_'); // للتعامل الآمن مع الآي دي
+        
         const ownerId = roomOwners.get(channelId);
         const channel = interaction.guild.channels.cache.get(channelId);
 
-        // التحقق أن المستخدم هو صاحب الروم حصراً
         if (interaction.user.id !== ownerId) {
             return interaction.reply({ content: '❌ عذراً، هذه الأزرار مخصصة لصاحب الغرفة فقط!', ephemeral: true });
         }
@@ -183,9 +174,10 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // معالجة الردود على النوافذ المنبثقة (Modals)
     if (interaction.isModalSubmit()) {
-        const [type, action, channelId] = interaction.customId.split('_');
+        const parts = interaction.customId.split('_');
+        const action = parts[1];
+        const channelId = parts.slice(2).join('_');
         const channel = interaction.guild.channels.cache.get(channelId);
 
         if (!channel) return interaction.reply({ content: '❌ الروم غير موجود.', ephemeral: true });
