@@ -11,7 +11,7 @@ const {
     TextInputBuilder, 
     TextInputStyle 
 } = require('discord.js');
-const express = require('express'); // استخدام express لضمان استجابة البورت في Render
+const express = require('express');
 require('dotenv').config();
 
 const app = express();
@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🌍 Server is listening on port ${PORT}`);
+    console.log(`🌍 Server is listening on port PORT ${PORT}`);
 });
 
 const client = new Client({
@@ -33,13 +33,46 @@ const client = new Client({
     ]
 });
 
-const roomOwners = new Map();
+// تخزين الرومات المؤقتة: Map<userId, voiceChannelId>
+const ownedChannels = new Map();
 const CREATOR_CHANNEL_ID = process.env.CREATOR_CHANNEL_ID;
 
 client.once('ready', () => {
     console.log(`✅ تم تسجيل الدخول بنجاح باسم: ${client.user.tag}`);
 });
 
+// أمر لإرسال لوحة التحكم الثابتة في الروم الكتابي (اكتب !setup في روم لوحة التحكم)
+client.on('messageCreate', async message => {
+    if (message.author.bot) return;
+
+    if (message.content === '!setup') {
+        if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) return;
+
+        const embed = new EmbedBuilder()
+            .setTitle('🎛️ ⠇لوحة التحكم الخاصة بالرومات المؤقتة')
+            .setDescription('مرحباً بك في نظام الرومات المؤقتة.\nمن هنا تستطيع التحكم بغرفتك الصوتية الكاملة عبر الأزرار أدناه.\n\n> ⚠️ *ملاحظة: يجب أن تمتلك روم صوتي نشط لكي تعمل معك الأزرار.*')
+            .setColor('#2b2d31')
+            .setFooter({ text: '3RB SYSTEM • Voice Management', iconURL: message.guild.iconURL() });
+
+        // الصف الأول
+        const row1 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('t_lock').setLabel('قفل / فتح').setStyle(ButtonStyle.Secondary).setEmoji('🔒'),
+            new ButtonBuilder().setCustomId('t_rename').setLabel('تغيير الاسم').setStyle(ButtonStyle.Secondary).setEmoji('✏️'),
+            new ButtonBuilder().setCustomId('t_limit').setLabel('حد الأعضاء').setStyle(ButtonStyle.Secondary).setEmoji('👥')
+        );
+
+        // الصف الثاني
+        const row2 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('t_hide').setLabel('إخفاء / إظهار').setStyle(ButtonStyle.Secondary).setEmoji('👁️'),
+            new ButtonBuilder().setCustomId('t_delete').setLabel('حذف الروم').setStyle(ButtonStyle.Danger).setEmoji('🗑️')
+        );
+
+        await message.channel.send({ embeds: [embed], components: [row1, row2] });
+        await message.delete().catch(() => {});
+    }
+});
+
+// نظام إنشاء الرومات المؤقتة
 client.on('voiceStateUpdate', async (oldState, newState) => {
     const member = newState.member;
     const guild = newState.guild;
@@ -68,81 +101,89 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
                 ],
             });
 
-            roomOwners.set(voiceChannel.id, member.id);
+            // ربط صاحب الأيدي بغرفته الصوتية
+            ownedChannels.set(member.id, voiceChannel.id);
             await member.voice.setChannel(voiceChannel);
-
-            const embed = new EmbedBuilder()
-                .setTitle('🎛️ لوحة تحكم الغرفة الصوتية')
-                .setDescription('مرحباً بك في غرفتك الخاصة! استخدم الأزرار أدناه للتحكم بكافة إعدادات الروم:')
-                .setColor('#ed4245')
-                .setFooter({ text: 'TempVoice System Professional' });
-
-            // استخدام أزرار بدون إيموجيات معقدة لتجنب خطأ الـ API
-            const row1 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId(`lock_${voiceChannel.id}`).setLabel('قفل 🔒').setStyle(ButtonStyle.Danger),
-                new ButtonBuilder().setCustomId(`unlock_${voiceChannel.id}`).setLabel('فتح 🔓').setStyle(ButtonStyle.Success),
-                new ButtonBuilder().setCustomId(`name_${voiceChannel.id}`).setLabel('تعديل الاسم ✏️').setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder().setCustomId(`limit_${voiceChannel.id}`).setLabel('العدد 👥').setStyle(ButtonStyle.Secondary)
-            );
-
-            const row2 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId(`hide_${voiceChannel.id}`).setLabel('إخفاء 👁️‍🗨️').setStyle(ButtonStyle.Danger),
-                new ButtonBuilder().setCustomId(`unhide_${voiceChannel.id}`).setLabel('إظهار 👁️').setStyle(ButtonStyle.Success)
-            );
-
-            await voiceChannel.send({ embeds: [embed], components: [row1, row2] });
 
         } catch (error) {
             console.error('خطأ أثناء إنشاء الروم المؤقت:', error);
         }
     }
 
+    // حذف الروم عند خروج الجميع منه
     if (oldState.channel && oldState.channel.id !== CREATOR_CHANNEL_ID) {
         const oldChannel = oldState.channel;
-        if (roomOwners.has(oldChannel.id) && oldChannel.members.size === 0) {
+        if (oldChannel.members.size === 0) {
+            for (let [userId, channelId] of ownedChannels.entries()) {
+                if (channelId === oldChannel.id) {
+                    ownedChannels.delete(userId);
+                    break;
+                }
+            }
             await oldChannel.delete().catch(() => {});
-            roomOwners.delete(oldChannel.id);
         }
     }
 });
 
+// التفاعل مع أزرار اللوحة الثابتة والتحقق من امتلاك روم
 client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
-        const parts = interaction.customId.split('_');
-        const action = parts[0];
-        const channelId = parts.slice(1).join('_'); // للتعامل الآمن مع الآي دي
-        
-        const ownerId = roomOwners.get(channelId);
-        const channel = interaction.guild.channels.cache.get(channelId);
+        if (!interaction.customId.startsWith('t_')) return;
 
-        if (interaction.user.id !== ownerId) {
-            return interaction.reply({ content: '❌ عذراً، هذه الأزرار مخصصة لصاحب الغرفة فقط!', ephemeral: true });
+        const userId = interaction.user.id;
+        const userVoiceChannelId = ownedChannels.get(userId);
+
+        // التحقق مما إذا كان العضو يمتلك روم صوتي نشط
+        if (!userVoiceChannelId) {
+            return interaction.reply({ 
+                content: '❌ You don\'t own an active temporary channel.', 
+                ephemeral: true 
+            });
         }
 
+        const channel = interaction.guild.channels.cache.get(userVoiceChannelId);
         if (!channel) {
-            return interaction.reply({ content: '❌ الروم غير موجود أو تم حذفه مسبقاً.', ephemeral: true });
+            ownedChannels.delete(userId);
+            return interaction.reply({ 
+                content: '❌ You don\'t own an active temporary channel.', 
+                ephemeral: true 
+            });
         }
+
+        const action = interaction.customId.replace('t_', '');
 
         switch (action) {
-            case 'lock':
-                await channel.permissionOverwrites.edit(interaction.guild.id, { Connect: false });
-                return interaction.reply({ content: '🔒 تم قفل الروم بنجاح.', ephemeral: true });
+            case 'lock': {
+                const currentPerms = channel.permissionOverwrites.cache.get(interaction.guild.id);
+                const isLocked = currentPerms && currentPerms.deny.has(PermissionsBitField.Flags.Connect);
+                
+                await channel.permissionOverwrites.edit(interaction.guild.id, {
+                    Connect: isLocked ? null : false
+                });
 
-            case 'unlock':
-                await channel.permissionOverwrites.edit(interaction.guild.id, { Connect: true });
-                return interaction.reply({ content: '🔓 تم فتح الروم بنجاح.', ephemeral: true });
+                return interaction.reply({ 
+                    content: isLocked ? '🔓 تم فتح الروم بنجاح.' : '🔒 تم قفل الروم بنجاح.', 
+                    ephemeral: true 
+                });
+            }
 
-            case 'hide':
-                await channel.permissionOverwrites.edit(interaction.guild.id, { ViewChannel: false });
-                return interaction.reply({ content: '👁️‍🗨️ تم إخفاء الروم عن الأعضاء.', ephemeral: true });
+            case 'hide': {
+                const currentPerms = channel.permissionOverwrites.cache.get(interaction.guild.id);
+                const isHidden = currentPerms && currentPerms.deny.has(PermissionsBitField.Flags.ViewChannel);
+                
+                await channel.permissionOverwrites.edit(interaction.guild.id, {
+                    ViewChannel: isHidden ? null : false
+                });
 
-            case 'unhide':
-                await channel.permissionOverwrites.edit(interaction.guild.id, { ViewChannel: true });
-                return interaction.reply({ content: '👁️ تم إظهار الروم للجميع.', ephemeral: true });
+                return interaction.reply({ 
+                    content: isHidden ? '👁️ تم إظهار الروم للجميع.' : '👁️‍🗨️ تم إخفاء الروم عن الأعضاء.', 
+                    ephemeral: true 
+                });
+            }
 
-            case 'name': {
+            case 'rename': {
                 const modal = new ModalBuilder()
-                    .setCustomId(`modal_name_${channelId}`)
+                    .setCustomId('modal_rename')
                     .setTitle('تغيير اسم الغرفة الصوتية');
 
                 const nameInput = new TextInputBuilder()
@@ -158,7 +199,7 @@ client.on('interactionCreate', async interaction => {
 
             case 'limit': {
                 const modal = new ModalBuilder()
-                    .setCustomId(`modal_limit_${channelId}`)
+                    .setCustomId('modal_limit')
                     .setTitle('تحديد الحد الأقصى للأعضاء');
 
                 const limitInput = new TextInputBuilder()
@@ -171,24 +212,36 @@ client.on('interactionCreate', async interaction => {
                 modal.addComponents(new ActionRowBuilder().addComponents(limitInput));
                 return interaction.showModal(modal);
             }
+
+            case 'delete': {
+                ownedChannels.delete(userId);
+                await channel.delete().catch(() => {});
+                return interaction.reply({ 
+                    content: '🗑️ تم حذف رومك بنجاح.', 
+                    ephemeral: true 
+                });
+            }
         }
     }
 
     if (interaction.isModalSubmit()) {
-        const parts = interaction.customId.split('_');
-        const action = parts[1];
-        const channelId = parts.slice(2).join('_');
-        const channel = interaction.guild.channels.cache.get(channelId);
+        const userId = interaction.user.id;
+        const userVoiceChannelId = ownedChannels.get(userId);
 
+        if (!userVoiceChannelId) {
+            return interaction.reply({ content: '❌ You don\'t own an active temporary channel.', ephemeral: true });
+        }
+
+        const channel = interaction.guild.channels.cache.get(userVoiceChannelId);
         if (!channel) return interaction.reply({ content: '❌ الروم غير موجود.', ephemeral: true });
 
-        if (action === 'name') {
+        if (interaction.customId === 'modal_rename') {
             const newName = interaction.fields.getTextInputValue('newName');
             await channel.setName(newName);
             return interaction.reply({ content: `✅ تم تحديث اسم الروم إلى: **${newName}**`, ephemeral: true });
         }
 
-        if (action === 'limit') {
+        if (interaction.customId === 'modal_limit') {
             const limitVal = parseInt(interaction.fields.getTextInputValue('newLimit'));
             if (isNaN(limitVal) || limitVal < 0 || limitVal > 99) {
                 return interaction.reply({ content: '❌ الرجاء إدخال رقم صحيح بين 0 و 99.', ephemeral: true });
