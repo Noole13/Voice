@@ -1,7 +1,7 @@
 {
   "name": "3rb-temp-voice-bot",
   "version": "1.0.0",
-  "description": "Discord Professional TempVoice Bot with Interactive Buttons and Modals",
+  "description": "Discord Professional TempVoice Bot with Interactive Buttons and Modals for Render Web Service",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
