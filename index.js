@@ -138,31 +138,41 @@ client.on('messageCreate', async message => {
         // MAIN EMBED
         // ========================================================
 
-                const embed = new EmbedBuilder()
-            .setColor('#2b2d31')
+        const embed = new EmbedBuilder()
+            .setColor('#D4AF37')
             .setAuthor({
-                name: '3RB  SYSTEM',
+                name: '👑 3RB ROYAL SYSTEM 👑',
                 iconURL:
                     message.guild.iconURL({ dynamic: true }) ||
                     undefined
             })
-            .setTitle('🎛️ لوحة التحكم الصوتية')
+            .setTitle('⚔️  𝐋𝐎𝐘𝐀𝐋 𝐕𝐎𝐈𝐂𝐄 • لوحة التحكم الملكية  ⚔️')
             .setDescription(
                 [
-                    '✨ **من هنا تتحكم في الروم الصوتي الخاص بك بالكامل** ✨',
+                    '`━━━━━━━━━━━━━━━━━━━━━━━━━━`',
                     '',
-                    '`✏️ تغيير الاسم`  `👥 حد الأعضاء`  `🔒 الخصوصية`  `⏳ غرفة الانتظار`',
-                    '`💬 حالة الروم`  `🟢 الثقة`  `👤 سحب الثقة`  `📨 دعوة`',
-                    '`⚡ طرد`  `🌐 تغيير المنطقة`  `⛔ حظر`  `✅ رفع الحظر`',
-                    '`👑 أخذ الملكية`  `🔄 نقل الملكية`  `🗑️ حذف الروم`  `🎨 لون الحاوية`',
-                    '`🔇 وضع الاجتماع`  `ℹ️ معلومات`  `➡️ طلب انضمام`  `⚙️ داشبورد`'
+                    '### ✨ 👑 مملكتك الصوتية بين يديك 👑 ✨',
+                    '> *من هنا تتحكم في روحك الصوتي بكامل القوة والفخامة* 🔥',
+                    '',
+                    '`━━━━━━━━━━━━━━━━━━━━━━━━━━`',
+                    '',
+                    '`✏️\u00A0تغيير\u00A0الاسم` `👥\u00A0حد\u00A0الأعضاء` `🔒\u00A0الخصوصية` `💬\u00A0حالة\u00A0الروم`',
+                    '`ℹ️\u00A0معلومات` `🟢\u00A0الثقة` `👤\u00A0سحب\u00A0الثقة` `📨\u00A0دعوة`',
+                    '`➡️\u00A0طلب\u00A0انضمام` `🔇\u00A0وضع\u00A0الاجتماع` `⚡\u00A0طرد` `⛔\u00A0حظر`',
+                    '`✅\u00A0رفع\u00A0الحظر` `👑\u00A0أخذ\u00A0الملكية` `🔄\u00A0نقل\u00A0الملكية` `⏳\u00A0غرفة\u00A0الانتظار`',
+                    '`🌐\u00A0تغيير\u00A0المنطقة` `🎨\u00A0لون\u00A0الحاوية` `⚙️\u00A0داشبورد` `🗑️\u00A0حذف\u00A0الروم`',
+                    '',
+                    '`━━━━━━━━━━━━━━━━━━━━━━━━━━`'
                 ].join('\n')
             )
             .setThumbnail(
                 message.guild.iconURL({ dynamic: true }) || null
             )
             .setFooter({
-                text: '3RB  SYSTEM • Voice Management Dashboard'
+                text: '⚔️ 3RB ROYAL SYSTEM ⚔️ • Voice Management Dashboard',
+                iconURL:
+                    message.guild.iconURL({ dynamic: true }) ||
+                    undefined
             })
             .setTimestamp();
 
