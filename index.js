@@ -41,50 +41,60 @@ client.once('ready', () => {
     console.log(`✅ تم تسجيل الدخول بنجاح باسم: ${client.user.tag}`);
 });
 
-// أمر لإرسال لوحة التحكم الثابتة الاحترافية (اكتب !setup في روم التحكم)
+// أمر إرسال اللوحة (مخصص للمالك والإدارة فقط)
 client.on('messageCreate', async message => {
-    if (message.author.bot) return;
+    if (message.author.bot || !message.guild) return;
 
     if (message.content === '!setup') {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) return;
+        // التحقق مما إذا كان المستخدم هو مالك السيرفر أو يمتلك صلاحية الإدارة (Administrator)
+        const isOwner = message.guild.ownerId === message.author.id;
+        const isAdmin = message.member && message.member.permissions.has(PermissionsBitField.Flags.Administrator);
 
-        const embed = new EmbedBuilder()
-            .setColor('#2b2d31')
-            .setTitle('🎛️ ⠇لوحة التحكم الخاصة بالرومات المؤقتة')
-            .setDescription('مرحباً بك في نظام الرومات المؤقتة الاحترافي.\nاستخدم الأزرار أدناه للتحكم الكامل بغرفتك الصوتية بكل سهولة.\n\n> ⚠️ *ملاحظة: يجب أن تمتلك روم صوتي نشط لكي تعمل معك الأزرار.*')
-            .setFooter({ text: '3RB SYSTEM • Voice Management', iconURL: message.guild.iconURL() });
+        if (!isOwner && !isAdmin) {
+            return message.reply({ content: '❌ هذا الأمر مخصص لمالك السيرفر وإدارة السيرفر فقط!', allowedMentions: { repliedUser: false } });
+        }
 
-        // الصف الأول: الأساسيات
-        const row1 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('t_rename').setLabel('تغيير الاسم').setStyle(ButtonStyle.Secondary).setEmoji('✏️'),
-            new ButtonBuilder().setCustomId('t_limit').setLabel('حد الأعضاء').setStyle(ButtonStyle.Secondary).setEmoji('👥'),
-            new ButtonBuilder().setCustomId('t_lock').setLabel('الخصوصية').setStyle(ButtonStyle.Secondary).setEmoji('🔒'),
-            new ButtonBuilder().setCustomId('t_bitrate').setLabel('غرفة الانتظار').setStyle(ButtonStyle.Secondary).setEmoji('⏳')
-        );
+        try {
+            const embed = new EmbedBuilder()
+                .setColor('#2b2d31')
+                .setTitle('🎛️ ⠇لوحة التحكم الخاصة بالرومات المؤقتة')
+                .setDescription('مرحباً بك في نظام الرومات المؤقتة الاحترافي.\nاستخدم الأزرار أدناه للتحكم الكامل بغرفتك الصوتية بكل سهولة.\n\n> ⚠️ *ملاحظة: يجب أن تمتلك روم صوتي نشط لكي تعمل معك الأزرار.*')
+                .setFooter({ text: '3RB SYSTEM • Voice Management', iconURL: message.guild.iconURL() });
 
-        // الصف الثاني: الصلاحيات والأمان
-        const row2 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('t_status').setLabel('حالة الروم').setStyle(ButtonStyle.Secondary).setEmoji('💬'),
-            new ButtonBuilder().setCustomId('t_trust').setLabel('الثقة').setStyle(ButtonStyle.Success).setEmoji('🟢'),
-            new ButtonBuilder().setCustomId('t_untrust').setLabel('سحب الثقة').setStyle(ButtonStyle.Secondary).setEmoji('👤'),
-            new ButtonBuilder().setCustomId('t_invite').setLabel('دعوة').setStyle(ButtonStyle.Primary).setEmoji('📞')
-        );
+            // الصف الأول: الأساسيات
+            const row1 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('t_rename').setLabel('تغيير الاسم').setStyle(ButtonStyle.Secondary).setEmoji('✏️'),
+                new ButtonBuilder().setCustomId('t_limit').setLabel('حد الأعضاء').setStyle(ButtonStyle.Secondary).setEmoji('👥'),
+                new ButtonBuilder().setCustomId('t_lock').setLabel('الخصوصية').setStyle(ButtonStyle.Secondary).setEmoji('🔒'),
+                new ButtonBuilder().setCustomId('t_bitrate').setLabel('غرفة الانتظار').setStyle(ButtonStyle.Secondary).setEmoji('⏳')
+            );
 
-        // الصف الثالث: العقوبات والإدارة
-        const row3 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('t_kick').setLabel('طرد').setStyle(ButtonStyle.Danger).setEmoji('٪'),
-            new ButtonBuilder().setCustomId('t_ban').setLabel('حظر').setStyle(ButtonStyle.Danger).setEmoji('🚫'),
-            new ButtonBuilder().setCustomId('t_unban').setLabel('رفع الحظر').setStyle(ButtonStyle.Success).setEmoji('✅')
-        );
+            // الصف الثاني: الصلاحيات والأمان
+            const row2 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('t_status').setLabel('حالة الروم').setStyle(ButtonStyle.Secondary).setEmoji('💬'),
+                new ButtonBuilder().setCustomId('t_trust').setLabel('الثقة').setStyle(ButtonStyle.Success).setEmoji('🟢'),
+                new ButtonBuilder().setCustomId('t_untrust').setLabel('سحب الثقة').setStyle(ButtonStyle.Secondary).setEmoji('👤'),
+                new ButtonBuilder().setCustomId('t_invite').setLabel('دعوة').setStyle(ButtonStyle.Primary).setEmoji('📞')
+            );
 
-        // الصف الرابع: الملكية والحذف
-        const row4 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('t_owner').setLabel('نقل الملكية').setStyle(ButtonStyle.Secondary).setEmoji('⇄'),
-            new ButtonBuilder().setCustomId('t_delete').setLabel('حذف الروم').setStyle(ButtonStyle.Danger).setEmoji('🗑️')
-        );
+            // الصف الثالث: العقوبات والإدارة
+            const row3 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('t_kick').setLabel('طرد').setStyle(ButtonStyle.Danger).setEmoji('٪'),
+                new ButtonBuilder().setCustomId('t_ban').setLabel('حظر').setStyle(ButtonStyle.Danger).setEmoji('🚫'),
+                new ButtonBuilder().setCustomId('t_unban').setLabel('رفع الحظر').setStyle(ButtonStyle.Success).setEmoji('✅')
+            );
 
-        await message.channel.send({ embeds: [embed], components: [row1, row2, row3, row4] });
-        await message.delete().catch(() => {});
+            // الصف الرابع: الملكية والحذف
+            const row4 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('t_owner').setLabel('نقل الملكية').setStyle(ButtonStyle.Secondary).setEmoji('⇄'),
+                new ButtonBuilder().setCustomId('t_delete').setLabel('حذف الروم').setStyle(ButtonStyle.Danger).setEmoji('🗑️')
+            );
+
+            await message.channel.send({ embeds: [embed], components: [row1, row2, row3, row4] });
+            await message.delete().catch(() => {});
+        } catch (err) {
+            console.error('Error sending setup panel:', err);
+        }
     }
 });
 
@@ -147,7 +157,6 @@ client.on('interactionCreate', async interaction => {
         const userId = interaction.user.id;
         const userVoiceChannelId = ownedChannels.get(userId);
 
-        // التحقق مما إذا كان يمتلك روم نشط
         if (!userVoiceChannelId) {
             return interaction.reply({ 
                 content: '❌ You don\'t own an active temporary channel.', 
