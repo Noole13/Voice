@@ -9,10 +9,7 @@ const {
     PermissionsBitField, 
     ModalBuilder, 
     TextInputBuilder, 
-    TextInputStyle,
-    REST,
-    Routes,
-    SlashCommandBuilder
+    TextInputStyle 
 } = require('discord.js');
 const express = require('express');
 require('dotenv').config();
@@ -36,33 +33,14 @@ const client = new Client({
     ]
 });
 
-const ownedChannels = new Map(); // Map لربط صاحب الروم (UserID) بـ (ChannelID)
+const ownedChannels = new Map(); // لربط صاحب الروم بغرفته
 const CREATOR_CHANNEL_ID = process.env.CREATOR_CHANNEL_ID;
 
-// تسجيل أمر الـ Slash Command وتأكيد التشغيل
-client.once('ready', async () => {
+client.once('ready', () => {
     console.log(`✅ تم تسجيل الدخول بنجاح باسم: ${client.user.tag}`);
-
-    const commands = [
-        new SlashCommandBuilder()
-            .setName('setup')
-            .setDescription('إرسال لوحة تحكم الرومات المؤقتة الاحترافية')
-    ];
-
-    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-
-    try {
-        await rest.put(
-            Routes.applicationCommands(client.user.id),
-            { body: commands },
-        );
-        console.log('✅ تم تسجيل أمر /setup بنجاح!');
-    } catch (error) {
-        console.error(error);
-    }
 });
 
-// إرسال لوحة التحكم عبر أمر /setup أو !setup
+// إرسال اللوحة عبر كتابة !setup في الشات
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
@@ -74,53 +52,65 @@ client.on('messageCreate', async message => {
             return message.reply({ content: '❌ هذا الأمر مخصص لمالك السيرفر وإدارة السيرفر فقط!' });
         }
 
-        await sendSetupPanel(message.channel);
-        await message.delete().catch(() => {});
+        try {
+            const embed = new EmbedBuilder()
+                .setColor('#2b2d31')
+                .setTitle('🎛️ ⠇لوحة التحكم المركزية للرومات الصوتية المؤقتة')
+                .setDescription('مرحباً بك في نظام إدارة الغرف الصوتية الاحترافي.\nاستخدم الأزرار أدناه للتحكم الكامل بغرفتك (تغيير الاسم، القفل، الحد، الطرد، الحظر، الدعوة، والمزيد).\n\n> ⚠️ **ملاحظة هامة:** يجب أن تكون مالكاً للغرفة الصوتية أو متواجدًا داخلها لتتمكن من استخدام خيارات التحكم.')
+                .setFooter({ text: '3RB ROYAL SYSTEM • Voice Management Dashboard', iconURL: message.guild.iconURL() });
+
+            // الصف الأول من الأزرار
+            const row1 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('t_rename').setLabel('تغيير الاسم').setStyle(ButtonStyle.Secondary).setEmoji('✏️'),
+                new ButtonBuilder().setCustomId('t_limit').setLabel('حد الأعضاء').setStyle(ButtonStyle.Secondary).setEmoji('👥'),
+                new ButtonBuilder().setCustomId('t_lock').setLabel('الخصوصية').setStyle(ButtonStyle.Secondary).setEmoji('🔒'),
+                new ButtonBuilder().setCustomId('t_bitrate').setLabel('غرفة الانتظار').setStyle(ButtonStyle.Secondary).setEmoji('⏳')
+            );
+
+            // الصف الثاني من الأزرار
+            const row2 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('t_status').setLabel('حالة الروم').setStyle(ButtonStyle.Secondary).setEmoji('💬'),
+                new ButtonBuilder().setCustomId('t_trust').setLabel('الثقة').setStyle(ButtonStyle.Success).setEmoji('🟢'),
+                new ButtonBuilder().setCustomId('t_untrust').setLabel('سحب الثقة').setStyle(ButtonStyle.Secondary).setEmoji('👤'),
+                new ButtonBuilder().setCustomId('t_invite').setLabel('دعوة').setStyle(ButtonStyle.Primary).setEmoji('📞')
+            );
+
+            // الصف الثالث من الأزرار
+            const row3 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('t_kick').setLabel('طرد').setStyle(ButtonStyle.Danger).setEmoji('٪'),
+                new ButtonBuilder().setCustomId('t_ban').setLabel('حظر').setStyle(ButtonStyle.Danger).setEmoji('🚫'),
+                new ButtonBuilder().setCustomId('t_unban').setLabel('رفع الحظر').setStyle(ButtonStyle.Success).setEmoji('✅')
+            );
+
+            // الصف الرابع من الأزرار
+            const row4 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('t_owner').setLabel('نقل الملكية').setStyle(ButtonStyle.Secondary).setEmoji('⇄'),
+                new ButtonBuilder().setCustomId('t_claim').setLabel('أخذ الملكية').setStyle(ButtonStyle.Secondary).setEmoji('👑'),
+                new ButtonBuilder().setCustomId('t_delete').setLabel('حذف الروم').setStyle(ButtonStyle.Danger).setEmoji('🗑️')
+            );
+
+            await message.channel.send({ embeds: [embed], components: [row1, row2, row3, row4] });
+            await message.delete().catch(() => {});
+        } catch (err) {
+            console.error('Error sending setup panel:', err);
+        }
     }
 });
 
+// التعامل مع الأزرار وتفاعلاتها
 client.on('interactionCreate', async interaction => {
-    if (interaction.isChatInputCommand()) {
-        if (interaction.commandName === 'setup') {
-            const isOwner = interaction.guild.ownerId === interaction.user.id;
-            const isAdmin = interaction.member && interaction.member.permissions.has(PermissionsBitField.Flags.Administrator);
-
-            if (!isOwner && !isAdmin) {
-                return interaction.reply({ content: '❌ هذا الأمر مخصص لمالك السيرفر وإدارة السيرفر فقط!', ephemeral: true });
-            }
-
-            await sendSetupPanel(interaction.channel);
-            return interaction.reply({ content: '✅ تم إرسال لوحة التحكم بنجاح!', ephemeral: true });
-        }
-    }
-
-    // التعامل مع الأزرار الشاملة للتحكم بالغرفة
     if (interaction.isButton()) {
         if (!interaction.customId.startsWith('t_')) return;
 
         const userId = interaction.user.id;
         const userVoiceChannelId = ownedChannels.get(userId);
-
         const action = interaction.customId.replace('t_', '');
 
-        // الأزرار التي لا تتطلب امتلاك روم بالضرورة مثل Claim (أخذ الملكية)
+        // زر أخذ الملكية (Claim) لا يتطلب أن يكون المالك الأصلي متواجد إنما يتطلب وجود شخص بالروم
         if (action === 'claim') {
             const memberChannel = interaction.member.voice.channel;
             if (!memberChannel) {
                 return interaction.reply({ content: '❌ يجب أن تكون داخل روم صوتي لتقوم بالمطالبة به!', ephemeral: true });
-            }
-            // البحث عما إذا كان الروم مسجلاً وتحت إدارة النظام
-            let currentOwnerId = null;
-            for (let [ownerId, chId] of ownedChannels.entries()) {
-                if (chId === memberChannel.id) {
-                    currentOwnerId = ownerId;
-                    break;
-                }
-            }
-
-            const ownerMember = interaction.guild.members.cache.get(currentOwnerId);
-            if (ownerMember && ownerMember.voice.channelId === memberChannel.id) {
-                return interaction.reply({ content: `❌ لا يمكنك أخذ الملكية لأن المالـك الحقيقي (${ownerMember.user.username}) موجود في الروم!`, ephemeral: true });
             }
 
             ownedChannels.set(userId, memberChannel.id);
@@ -128,16 +118,15 @@ client.on('interactionCreate', async interaction => {
         }
 
         if (!userVoiceChannelId) {
-            return interaction.reply({ content: '❌ يجب أن تمتلك روم صوتي نشط لكي تعمل معك أزرار التحكم!', ephemeral: true });
+            return interaction.reply({ content: '❌ You don\'t own an active temporary channel.', ephemeral: true });
         }
 
         const channel = interaction.guild.channels.cache.get(userVoiceChannelId);
         if (!channel) {
             ownedChannels.delete(userId);
-            return interaction.reply({ content: '❌ لم يتم العثور على غرفتك الصوتية النشطة!', ephemeral: true });
+            return interaction.reply({ content: '❌ You don\'t own an active temporary channel.', ephemeral: true });
         }
 
-        // تنفيذ الأوامر حسب الزر المضغوط
         switch (action) {
             case 'lock': {
                 const currentPerms = channel.permissionOverwrites.cache.get(interaction.guild.id);
@@ -164,21 +153,6 @@ client.on('interactionCreate', async interaction => {
                 await channel.delete().catch(() => {});
                 return interaction.reply({ content: '🗑️ تم حذف رومك بنجاح.', ephemeral: true });
             }
-            case 'hide': {
-                const currentPerms = channel.permissionOverwrites.cache.get(interaction.guild.id);
-                const isHidden = currentPerms && currentPerms.deny.has(PermissionsBitField.Flags.ViewChannel);
-                await channel.permissionOverwrites.edit(interaction.guild.id, {
-                    ViewChannel: isHidden ? null : false
-                });
-                return interaction.reply({ content: isHidden ? '👁️ تم إظهار الروم بنجاح.' : '🙈 تم إخفاء الروم بنجاح.', ephemeral: true });
-            }
-            case 'bitrate': {
-                // رفع/خفض جودة الصوت كـ Toggle سريع
-                const currentBitrate = channel.bitrate;
-                const newBitrate = currentBitrate === 64000 ? 128000 : 64000;
-                await channel.setBitrate(newBitrate);
-                return interaction.reply({ content: `⏳ تم تغيير جودة الصوت إلى **${newBitrate / 1000}kbps**`, ephemeral: true });
-            }
             case 'status': {
                 const modal = new ModalBuilder().setCustomId('modal_status').setTitle('تغيير حالة الروم (وصف)');
                 const statusInput = new TextInputBuilder().setCustomId('newStatus').setLabel('اكتب الحالة أو الوصف الجديد:').setStyle(TextInputStyle.Short).setMaxLength(50).setRequired(true);
@@ -195,7 +169,6 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // استقبال النوافذ (Modals)
     if (interaction.isModalSubmit()) {
         const userId = interaction.user.id;
         const userVoiceChannelId = ownedChannels.get(userId);
@@ -227,48 +200,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// دالة إرسال الإمبيد الفخم والأزرار المتكاملة مطابقة للصور
-async function sendSetupPanel(channel) {
-    const embed = new EmbedBuilder()
-        .setColor('#2b2d31')
-        .setTitle('🎛️ ⠇لوحة التحكم المركزية للرومات الصوتية المؤقتة')
-        .setDescription('مرحباً بك في نظام إدارة الغرف الصوتية الاحترافي.\nاستخدم الأزرار أدناه للتحكم الكامل بغرفتك (تغيير الاسم، القفل، الحد، الطرد، الحظر، الدعوة، والمزيد).\n\n> ⚠️ **ملاحظة هامة:** يجب أن تكون مالكاً للغرفة الصوتية أو متواجدًا داخلها لتتمكن من استخدام خيارات التحكم.')
-        .setFooter({ text: '3RB ROYAL SYSTEM • Voice Management Dashboard', iconURL: channel.guild.iconURL() });
-
-    // الصف الأول من الأزرار (مطابق لطلبك)
-    const row1 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('t_rename').setLabel('تغيير الاسم').setStyle(ButtonStyle.Secondary).setEmoji('✏️'),
-        new ButtonBuilder().setCustomId('t_limit').setLabel('حد الأعضاء').setStyle(ButtonStyle.Secondary).setEmoji('👥'),
-        new ButtonBuilder().setCustomId('t_lock').setLabel('الخصوصية').setStyle(ButtonStyle.Secondary).setEmoji('🔒'),
-        new ButtonBuilder().setCustomId('t_bitrate').setLabel('غرفة الانتظار').setStyle(ButtonStyle.Secondary).setEmoji('⏳')
-    );
-
-    // الصف الثاني من الأزرار
-    const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('t_status').setLabel('حالة الروم').setStyle(ButtonStyle.Secondary).setEmoji('💬'),
-        new ButtonBuilder().setCustomId('t_trust').setLabel('الثقة').setStyle(ButtonStyle.Success).setEmoji('🟢'),
-        new ButtonBuilder().setCustomId('t_untrust').setLabel('سحب الثقة').setStyle(ButtonStyle.Secondary).setEmoji('👤'),
-        new ButtonBuilder().setCustomId('t_invite').setLabel('دعوة').setStyle(ButtonStyle.Primary).setEmoji('📞')
-    );
-
-    // الصف الثالث من الأزرار
-    const row3 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('t_kick').setLabel('طرد').setStyle(ButtonStyle.Danger).setEmoji('٪'),
-        new ButtonBuilder().setCustomId('t_ban').setLabel('حظر').setStyle(ButtonStyle.Danger).setEmoji('🚫'),
-        new ButtonBuilder().setCustomId('t_unban').setLabel('رفع الحظر').setStyle(ButtonStyle.Success).setEmoji('✅')
-    );
-
-    // الصف الرابع من الأزرار
-    const row4 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('t_owner').setLabel('نقل الملكية').setStyle(ButtonStyle.Secondary).setEmoji('⇄'),
-        new ButtonBuilder().setCustomId('t_claim').setLabel('أخذ الملكية').setStyle(ButtonStyle.Secondary).setEmoji('👑'),
-        new ButtonBuilder().setCustomId('t_delete').setLabel('حذف الروم').setStyle(ButtonStyle.Danger).setEmoji('🗑️')
-    );
-
-    await channel.send({ embeds: [embed], components: [row1, row2, row3, row4] });
-}
-
-// نظام إنشاء الرومات المؤقتة التلقائي عند دخول روم الصناعة
+// نظام إنشاء الرومات المؤقتة
 client.on('voiceStateUpdate', async (oldState, newState) => {
     const member = newState.member;
     const guild = newState.guild;
