@@ -11,8 +11,21 @@ const {
     TextInputBuilder, 
     TextInputStyle 
 } = require('discord.js');
+const http = require('http');
 require('dotenv').config();
 
+// إنشاء خادم ويب مصغر لضمان استمرار عمل البوت 24/7 على Render Web Service
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot is running successfully!');
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`🌍 Server is listening on port ${PORT}`);
+});
+
+// تهيئة بوت ديسكورد
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
