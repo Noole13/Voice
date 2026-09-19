@@ -177,7 +177,8 @@ client.on('messageCreate', async message => {
             .setTimestamp();
 
         // ========================================================
-        // ROW 1 - BASIC
+        // ROW 1 — BASIC
+        // 4 BUTTONS
         // ========================================================
 
         const row1 = new ActionRowBuilder().addComponents(
@@ -204,20 +205,21 @@ client.on('messageCreate', async message => {
                 .setCustomId('t_status')
                 .setLabel('حالة الروم')
                 .setEmoji('💬')
-                .setStyle(ButtonStyle.Secondary),
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+        // ========================================================
+        // ROW 2 — INFORMATION / MEMBERS
+        // 4 BUTTONS
+        // ========================================================
+
+        const row2 = new ActionRowBuilder().addComponents(
 
             new ButtonBuilder()
                 .setCustomId('t_info')
                 .setLabel('معلومات')
                 .setEmoji('ℹ️')
-                .setStyle(ButtonStyle.Secondary)
-        );
-
-        // ========================================================
-        // ROW 2 - MEMBERS
-        // ========================================================
-
-        const row2 = new ActionRowBuilder().addComponents(
+                .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_trust')
@@ -235,7 +237,15 @@ client.on('messageCreate', async message => {
                 .setCustomId('t_invite')
                 .setLabel('دعوة')
                 .setEmoji('📨')
-                .setStyle(ButtonStyle.Primary),
+                .setStyle(ButtonStyle.Primary)
+        );
+
+        // ========================================================
+        // ROW 3 — MEMBERS / MODERATION
+        // 4 BUTTONS
+        // ========================================================
+
+        const row3 = new ActionRowBuilder().addComponents(
 
             new ButtonBuilder()
                 .setCustomId('t_request')
@@ -247,14 +257,7 @@ client.on('messageCreate', async message => {
                 .setCustomId('t_meeting')
                 .setLabel('وضع الاجتماع')
                 .setEmoji('🔇')
-                .setStyle(ButtonStyle.Secondary)
-        );
-
-        // ========================================================
-        // ROW 3 - MODERATION
-        // ========================================================
-
-        const row3 = new ActionRowBuilder().addComponents(
+                .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_kick')
@@ -266,7 +269,15 @@ client.on('messageCreate', async message => {
                 .setCustomId('t_ban')
                 .setLabel('حظر')
                 .setEmoji('⛔')
-                .setStyle(ButtonStyle.Danger),
+                .setStyle(ButtonStyle.Danger)
+        );
+
+        // ========================================================
+        // ROW 4 — OWNERSHIP / PROTECTION
+        // 4 BUTTONS
+        // ========================================================
+
+        const row4 = new ActionRowBuilder().addComponents(
 
             new ButtonBuilder()
                 .setCustomId('t_unban')
@@ -284,20 +295,21 @@ client.on('messageCreate', async message => {
                 .setCustomId('t_owner')
                 .setLabel('نقل الملكية')
                 .setEmoji('🔄')
-                .setStyle(ButtonStyle.Secondary)
-        );
-
-        // ========================================================
-        // ROW 4 - ADVANCED
-        // ========================================================
-
-        const row4 = new ActionRowBuilder().addComponents(
+                .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_bitrate')
                 .setLabel('غرفة الانتظار')
                 .setEmoji('⏳')
-                .setStyle(ButtonStyle.Secondary),
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+        // ========================================================
+        // ROW 5 — ADVANCED
+        // 4 BUTTONS
+        // ========================================================
+
+        const row5 = new ActionRowBuilder().addComponents(
 
             new ButtonBuilder()
                 .setCustomId('t_region')
@@ -326,6 +338,7 @@ client.on('messageCreate', async message => {
 
         // ========================================================
         // SEND PANEL
+        // 5 ROWS × 4 BUTTONS = 20 BUTTONS
         // ========================================================
 
         await message.channel.send({
@@ -334,7 +347,8 @@ client.on('messageCreate', async message => {
                 row1,
                 row2,
                 row3,
-                row4
+                row4,
+                row5
             ]
         });
 
@@ -342,10 +356,14 @@ client.on('messageCreate', async message => {
 
     } catch (error) {
 
-        console.error('❌ Error sending setup panel:', error);
+        console.error(
+            '❌ Error sending setup panel:',
+            error
+        );
 
         await message.reply({
-            content: '❌ حدث خطأ أثناء إنشاء لوحة التحكم.'
+            content:
+                '❌ حدث خطأ أثناء إنشاء لوحة التحكم.'
         }).catch(() => {});
     }
 });
@@ -358,9 +376,96 @@ client.on('interactionCreate', async interaction => {
 
     if (!interaction.isButton()) return;
 
+    // أزرار طلب الانضمام لها نظام مختلف
+    if (
+        interaction.customId.startsWith('request_accept_') ||
+        interaction.customId.startsWith('request_deny_')
+    ) {
+
+        try {
+
+            const parts =
+                interaction.customId.split('_');
+
+            const type = parts[1];
+            const targetId = parts[2];
+            const channelId = parts[3];
+
+            const ownerId =
+                findChannelOwner(channelId);
+
+            if (ownerId !== interaction.user.id) {
+                return interaction.reply({
+                    content:
+                        '❌ فقط مالك الغرفة يستطيع التعامل مع هذا الطلب.',
+                    ephemeral: true
+                });
+            }
+
+            if (!interaction.guild) {
+                return interaction.reply({
+                    content:
+                        '❌ لا يمكن معالجة الطلب من خارج السيرفر.',
+                    ephemeral: true
+                });
+            }
+
+            const channel =
+                interaction.guild.channels.cache.get(
+                    channelId
+                );
+
+            if (!channel) {
+                return interaction.reply({
+                    content:
+                        '❌ الغرفة لم تعد موجودة.',
+                    ephemeral: true
+                });
+            }
+
+            if (type === 'accept') {
+
+                await channel.permissionOverwrites.edit(
+                    targetId,
+                    {
+                        Connect: true,
+                        Speak: true
+                    }
+                );
+
+                return interaction.update({
+                    content:
+                        '✅ تم السماح للعضو بدخول الغرفة.',
+                    embeds: [],
+                    components: []
+                });
+            }
+
+            return interaction.update({
+                content:
+                    '❌ تم رفض طلب الانضمام.',
+                embeds: [],
+                components: []
+            });
+
+        } catch (error) {
+
+            console.error(
+                '❌ Request Button Error:',
+                error
+            );
+
+            return errorReply(
+                interaction,
+                '❌ حدث خطأ أثناء معالجة الطلب.'
+            );
+        }
+    }
+
     if (!interaction.customId.startsWith('t_')) return;
 
-    const action = interaction.customId.replace('t_', '');
+    const action =
+        interaction.customId.replace('t_', '');
 
     try {
 
@@ -370,23 +475,30 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'claim') {
 
-            const memberChannel = getMemberVoiceChannel(interaction);
+            const memberChannel =
+                getMemberVoiceChannel(interaction);
 
             if (!memberChannel) {
                 return interaction.reply({
-                    content: '❌ يجب أن تكون داخل روم صوتي للمطالبة به.',
+                    content:
+                        '❌ يجب أن تكون داخل روم صوتي للمطالبة به.',
                     ephemeral: true
                 });
             }
 
-            if (memberChannel.id === CREATOR_CHANNEL_ID) {
+            if (
+                memberChannel.id ===
+                CREATOR_CHANNEL_ID
+            ) {
                 return interaction.reply({
-                    content: '❌ لا يمكنك المطالبة بغرفة الإنشاء.',
+                    content:
+                        '❌ لا يمكنك المطالبة بغرفة الإنشاء.',
                     ephemeral: true
                 });
             }
 
-            const existingOwner = findChannelOwner(memberChannel.id);
+            const existingOwner =
+                findChannelOwner(memberChannel.id);
 
             if (existingOwner) {
 
@@ -397,7 +509,8 @@ client.on('interactionCreate', async interaction => {
 
                 if (
                     ownerMember &&
-                    ownerMember.voice.channelId === memberChannel.id
+                    ownerMember.voice.channelId ===
+                    memberChannel.id
                 ) {
                     return interaction.reply({
                         content:
@@ -437,7 +550,8 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'request') {
 
-            const memberChannel = getMemberVoiceChannel(interaction);
+            const memberChannel =
+                getMemberVoiceChannel(interaction);
 
             if (!memberChannel) {
                 return interaction.reply({
@@ -447,7 +561,8 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            const ownerId = findChannelOwner(memberChannel.id);
+            const ownerId =
+                findChannelOwner(memberChannel.id);
 
             if (!ownerId) {
                 return interaction.reply({
@@ -457,7 +572,9 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            if (ownerId === interaction.user.id) {
+            if (
+                ownerId === interaction.user.id
+            ) {
                 return interaction.reply({
                     content:
                         '❌ أنت مالك الغرفة بالفعل.',
@@ -478,48 +595,57 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            const requestEmbed = new EmbedBuilder()
-                .setColor('#2b2d31')
-                .setTitle('➡️ طلب انضمام جديد')
-                .setDescription(
-                    `العضو **${interaction.user.tag}** يريد الانضمام إلى غرفتك الصوتية.`
-                )
-                .addFields(
-                    {
-                        name: '👤 العضو',
-                        value: `<@${interaction.user.id}>`,
-                        inline: true
-                    },
-                    {
-                        name: '🎙️ الغرفة',
-                        value: memberChannel.name,
-                        inline: true
-                    }
-                )
-                .setFooter({
-                    text: '3RB ROYAL SYSTEM'
-                })
-                .setTimestamp();
+            const requestEmbed =
+                new EmbedBuilder()
+                    .setColor('#2b2d31')
+                    .setTitle('➡️ طلب انضمام جديد')
+                    .setDescription(
+                        `العضو **${interaction.user.tag}** يريد الانضمام إلى غرفتك الصوتية.`
+                    )
+                    .addFields(
+                        {
+                            name: '👤 العضو',
+                            value:
+                                `<@${interaction.user.id}>`,
+                            inline: true
+                        },
+                        {
+                            name: '🎙️ الغرفة',
+                            value:
+                                memberChannel.name,
+                            inline: true
+                        }
+                    )
+                    .setFooter({
+                        text:
+                            '3RB ROYAL SYSTEM'
+                    })
+                    .setTimestamp();
 
             const requestRow =
-                new ActionRowBuilder().addComponents(
+                new ActionRowBuilder()
+                    .addComponents(
 
-                    new ButtonBuilder()
-                        .setCustomId(
-                            `request_accept_${interaction.user.id}_${memberChannel.id}`
-                        )
-                        .setLabel('السماح')
-                        .setEmoji('✅')
-                        .setStyle(ButtonStyle.Success),
+                        new ButtonBuilder()
+                            .setCustomId(
+                                `request_accept_${interaction.user.id}_${memberChannel.id}`
+                            )
+                            .setLabel('السماح')
+                            .setEmoji('✅')
+                            .setStyle(
+                                ButtonStyle.Success
+                            ),
 
-                    new ButtonBuilder()
-                        .setCustomId(
-                            `request_deny_${interaction.user.id}_${memberChannel.id}`
-                        )
-                        .setLabel('رفض')
-                        .setEmoji('❌')
-                        .setStyle(ButtonStyle.Danger)
-                );
+                        new ButtonBuilder()
+                            .setCustomId(
+                                `request_deny_${interaction.user.id}_${memberChannel.id}`
+                            )
+                            .setLabel('رفض')
+                            .setEmoji('❌')
+                            .setStyle(
+                                ButtonStyle.Danger
+                            )
+                    );
 
             try {
 
@@ -545,76 +671,17 @@ client.on('interactionCreate', async interaction => {
         }
 
         // ========================================================
-        // REQUEST ACCEPT / DENY
-        // ========================================================
-
-        if (
-            interaction.customId.startsWith('request_accept_') ||
-            interaction.customId.startsWith('request_deny_')
-        ) {
-
-            const parts = interaction.customId.split('_');
-
-            const type = parts[1];
-            const targetId = parts[2];
-            const channelId = parts[3];
-
-            const ownerId = findChannelOwner(channelId);
-
-            if (ownerId !== interaction.user.id) {
-                return interaction.reply({
-                    content:
-                        '❌ فقط مالك الغرفة يستطيع التعامل مع هذا الطلب.',
-                    ephemeral: true
-                });
-            }
-
-            const channel =
-                interaction.guild.channels.cache.get(channelId);
-
-            if (!channel) {
-                return interaction.reply({
-                    content:
-                        '❌ الغرفة لم تعد موجودة.',
-                    ephemeral: true
-                });
-            }
-
-            if (type === 'accept') {
-
-                await channel.permissionOverwrites.edit(
-                    targetId,
-                    {
-                        Connect: true,
-                        Speak: true
-                    }
-                );
-
-                return interaction.update({
-                    content:
-                        '✅ تم السماح للعضو بدخول الغرفة.',
-                    embeds: [],
-                    components: []
-                });
-            }
-
-            return interaction.update({
-                content:
-                    '❌ تم رفض طلب الانضمام.',
-                embeds: [],
-                components: []
-            });
-        }
-
-        // ========================================================
         // NORMAL OWNER ACTIONS
         // ========================================================
 
-        const channel = getOwnedChannel(interaction);
+        const channel =
+            getOwnedChannel(interaction);
 
         if (!channel) {
 
-            ownedChannels.delete(interaction.user.id);
+            ownedChannels.delete(
+                interaction.user.id
+            );
 
             return interaction.reply({
                 content:
@@ -629,23 +696,40 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'rename') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_rename')
-                .setTitle('تغيير اسم الغرفة الصوتية');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_rename'
+                    )
+                    .setTitle(
+                        'تغيير اسم الغرفة الصوتية'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('newName')
-                .setLabel('اكتب الاسم الجديد للروم')
-                .setPlaceholder('مثال: 🔊 Gaming Room')
-                .setStyle(TextInputStyle.Short)
-                .setMaxLength(30)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'newName'
+                    )
+                    .setLabel(
+                        'اكتب الاسم الجديد للروم'
+                    )
+                    .setPlaceholder(
+                        'مثال: 🔊 Gaming Room'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setMaxLength(30)
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -654,23 +738,40 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'limit') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_limit')
-                .setTitle('تحديد حد الأعضاء');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_limit'
+                    )
+                    .setTitle(
+                        'تحديد حد الأعضاء'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('newLimit')
-                .setLabel('العدد من 0 إلى 99')
-                .setPlaceholder('مثال: 10')
-                .setStyle(TextInputStyle.Short)
-                .setMaxLength(2)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'newLimit'
+                    )
+                    .setLabel(
+                        'العدد من 0 إلى 99'
+                    )
+                    .setPlaceholder(
+                        'مثال: 10'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setMaxLength(2)
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -692,14 +793,18 @@ client.on('interactionCreate', async interaction => {
             await channel.permissionOverwrites.edit(
                 interaction.guild.id,
                 {
-                    Connect: isLocked ? null : false
+                    Connect:
+                        isLocked
+                            ? null
+                            : false
                 }
             );
 
             return interaction.reply({
-                content: isLocked
-                    ? '🔓 تم فتح الغرفة ويمكن للأعضاء دخولها.'
-                    : '🔒 تم قفل الغرفة ومنع دخول الأعضاء.',
+                content:
+                    isLocked
+                        ? '🔓 تم فتح الغرفة ويمكن للأعضاء دخولها.'
+                        : '🔒 تم قفل الغرفة ومنع دخول الأعضاء.',
                 ephemeral: true
             });
         }
@@ -710,23 +815,40 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'bitrate') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_waiting')
-                .setTitle('إعدادات غرفة الانتظار');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_waiting'
+                    )
+                    .setTitle(
+                        'إعدادات غرفة الانتظار'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('waitMsg')
-                .setLabel('رسالة حالة الانتظار')
-                .setPlaceholder('مثال: ⏳ الغرفة خاصة حالياً')
-                .setStyle(TextInputStyle.Short)
-                .setMaxLength(50)
-                .setRequired(false);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'waitMsg'
+                    )
+                    .setLabel(
+                        'رسالة حالة الانتظار'
+                    )
+                    .setPlaceholder(
+                        'مثال: ⏳ الغرفة خاصة حالياً'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setMaxLength(50)
+                    .setRequired(false);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -735,23 +857,40 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'status') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_status')
-                .setTitle('تغيير حالة الروم');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_status'
+                    )
+                    .setTitle(
+                        'تغيير حالة الروم'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('newStatus')
-                .setLabel('الحالة أو الوصف')
-                .setPlaceholder('مثال: 🎮 Ranked Only')
-                .setStyle(TextInputStyle.Short)
-                .setMaxLength(50)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'newStatus'
+                    )
+                    .setLabel(
+                        'الحالة أو الوصف'
+                    )
+                    .setPlaceholder(
+                        'مثال: 🎮 Ranked Only'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setMaxLength(50)
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -760,22 +899,39 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'trust') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_trust')
-                .setTitle('إعطاء الثقة');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_trust'
+                    )
+                    .setTitle(
+                        'إعطاء الثقة'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('targetUser')
-                .setLabel('User ID')
-                .setPlaceholder('123456789012345678')
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'targetUser'
+                    )
+                    .setLabel(
+                        'User ID'
+                    )
+                    .setPlaceholder(
+                        '123456789012345678'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -784,22 +940,39 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'untrust') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_untrust')
-                .setTitle('سحب الثقة');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_untrust'
+                    )
+                    .setTitle(
+                        'سحب الثقة'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('targetUser')
-                .setLabel('User ID')
-                .setPlaceholder('123456789012345678')
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'targetUser'
+                    )
+                    .setLabel(
+                        'User ID'
+                    )
+                    .setPlaceholder(
+                        '123456789012345678'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -808,13 +981,15 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'invite') {
 
-            const invite = await channel
-                .createInvite({
-                    maxUses: 1,
-                    unique: true,
-                    reason: `Temporary room invite by ${interaction.user.tag}`
-                })
-                .catch(() => null);
+            const invite =
+                await channel
+                    .createInvite({
+                        maxUses: 1,
+                        unique: true,
+                        reason:
+                            `Temporary room invite by ${interaction.user.tag}`
+                    })
+                    .catch(() => null);
 
             if (!invite) {
                 return interaction.reply({
@@ -837,22 +1012,39 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'kick') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_kick')
-                .setTitle('طرد عضو');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_kick'
+                    )
+                    .setTitle(
+                        'طرد عضو'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('targetUser')
-                .setLabel('User ID')
-                .setPlaceholder('123456789012345678')
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'targetUser'
+                    )
+                    .setLabel(
+                        'User ID'
+                    )
+                    .setPlaceholder(
+                        '123456789012345678'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -861,24 +1053,39 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'region') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_region')
-                .setTitle('تغيير منطقة الصوت');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_region'
+                    )
+                    .setTitle(
+                        'تغيير منطقة الصوت'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('newRegion')
-                .setLabel('أدخل المنطقة أو اكتب auto')
-                .setPlaceholder(
-                    'auto / us-east / us-west / europe / singapore'
-                )
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'newRegion'
+                    )
+                    .setLabel(
+                        'أدخل المنطقة أو اكتب auto'
+                    )
+                    .setPlaceholder(
+                        'auto / us-east / us-west / europe / singapore'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -887,22 +1094,39 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'ban') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_ban')
-                .setTitle('حظر عضو من الغرفة');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_ban'
+                    )
+                    .setTitle(
+                        'حظر عضو من الغرفة'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('targetUser')
-                .setLabel('User ID')
-                .setPlaceholder('123456789012345678')
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'targetUser'
+                    )
+                    .setLabel(
+                        'User ID'
+                    )
+                    .setPlaceholder(
+                        '123456789012345678'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -911,22 +1135,39 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'unban') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_unban')
-                .setTitle('رفع الحظر');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_unban'
+                    )
+                    .setTitle(
+                        'رفع الحظر'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('targetUser')
-                .setLabel('User ID')
-                .setPlaceholder('123456789012345678')
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'targetUser'
+                    )
+                    .setLabel(
+                        'User ID'
+                    )
+                    .setPlaceholder(
+                        '123456789012345678'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -935,22 +1176,39 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'owner') {
 
-            const modal = new ModalBuilder()
-                .setCustomId('modal_owner')
-                .setTitle('نقل ملكية الغرفة');
+            const modal =
+                new ModalBuilder()
+                    .setCustomId(
+                        'modal_owner'
+                    )
+                    .setTitle(
+                        'نقل ملكية الغرفة'
+                    );
 
-            const input = new TextInputBuilder()
-                .setCustomId('targetUser')
-                .setLabel('User ID للمالك الجديد')
-                .setPlaceholder('123456789012345678')
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true);
+            const input =
+                new TextInputBuilder()
+                    .setCustomId(
+                        'targetUser'
+                    )
+                    .setLabel(
+                        'User ID للمالك الجديد'
+                    )
+                    .setPlaceholder(
+                        '123456789012345678'
+                    )
+                    .setStyle(
+                        TextInputStyle.Short
+                    )
+                    .setRequired(true);
 
             modal.addComponents(
-                new ActionRowBuilder().addComponents(input)
+                new ActionRowBuilder()
+                    .addComponents(input)
             );
 
-            return interaction.showModal(modal);
+            return interaction.showModal(
+                modal
+            );
         }
 
         // ========================================================
@@ -959,9 +1217,12 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'delete') {
 
-            const channelId = channel.id;
+            const channelId =
+                channel.id;
 
-            ownedChannels.delete(interaction.user.id);
+            ownedChannels.delete(
+                interaction.user.id
+            );
 
             await interaction.reply({
                 content:
@@ -1055,7 +1316,8 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'info') {
 
-            const ownerId = findChannelOwner(channel.id);
+            const ownerId =
+                findChannelOwner(channel.id);
 
             const owner =
                 ownerId
@@ -1063,10 +1325,12 @@ client.on('interactionCreate', async interaction => {
                     : 'غير معروف';
 
             const region =
-                channel.rtcRegion || 'تلقائي';
+                channel.rtcRegion ||
+                'تلقائي';
 
             const limit =
-                channel.userLimit || 'بلا حدود';
+                channel.userLimit ||
+                'بلا حدود';
 
             const members =
                 channel.members.size;
@@ -1080,45 +1344,61 @@ client.on('interactionCreate', async interaction => {
                     ? '🔒 مقفلة'
                     : '🔓 مفتوحة';
 
-            const embed = new EmbedBuilder()
-                .setColor('#2b2d31')
-                .setTitle('ℹ️ معلومات الغرفة')
-                .addFields(
-                    {
-                        name: '👑 المالك',
-                        value: owner,
-                        inline: true
-                    },
-                    {
-                        name: '🎙️ اسم الغرفة',
-                        value: channel.name,
-                        inline: true
-                    },
-                    {
-                        name: '👥 الأعضاء',
-                        value: `${members}`,
-                        inline: true
-                    },
-                    {
-                        name: '🔢 الحد',
-                        value: `${limit}`,
-                        inline: true
-                    },
-                    {
-                        name: '🔒 الخصوصية',
-                        value: locked,
-                        inline: true
-                    },
-                    {
-                        name: '🌐 المنطقة',
-                        value: region,
-                        inline: true
-                    }
-                )
-                .setFooter({
-                    text: '3RB ROYAL SYSTEM'
-                })
-                .setTimestamp();
+            const embed =
+                new EmbedBuilder()
+                    .setColor('#2b2d31')
+                    .setTitle(
+                        'ℹ️ معلومات الغرفة'
+                    )
+                    .addFields(
+                        {
+                            name:
+                                '👑 المالك',
+                            value:
+                                owner,
+                            inline: true
+                        },
+                        {
+                            name:
+                                '🎙️ اسم الغرفة',
+                            value:
+                                channel.name,
+                            inline: true
+                        },
+                        {
+                            name:
+                                '👥 الأعضاء',
+                            value:
+                                `${members}`,
+                            inline: true
+                        },
+                        {
+                            name:
+                                '🔢 الحد',
+                            value:
+                                `${limit}`,
+                            inline: true
+                        },
+                        {
+                            name:
+                                '🔒 الخصوصية',
+                            value:
+                                locked,
+                            inline: true
+                        },
+                        {
+                            name:
+                                '🌐 المنطقة',
+                            value:
+                                region,
+                            inline: true
+                        }
+                    )
+                    .setFooter({
+                        text:
+                            '3RB ROYAL SYSTEM'
+                    })
+                    .setTimestamp();
 
             return interaction.reply({
                 embeds: [embed],
@@ -1132,28 +1412,33 @@ client.on('interactionCreate', async interaction => {
 
         if (action === 'dashboard') {
 
-            const ownerId = findChannelOwner(channel.id);
+            const ownerId =
+                findChannelOwner(channel.id);
 
-            const embed = new EmbedBuilder()
-                .setColor('#2b2d31')
-                .setTitle('⚙️ داشبورد الغرفة')
-                .setDescription(
-                    [
-                        `🎙️ **الغرفة:** ${channel.name}`,
-                        `👑 **المالك:** <@${ownerId}>`,
-                        `👥 **الأعضاء:** ${channel.members.size}`,
-                        `🔢 **الحد:** ${channel.userLimit || 'بلا حدود'}`,
-                        `🌐 **المنطقة:** ${channel.rtcRegion || 'تلقائي'}`,
-                        '',
-                        '🟢 **حالة النظام:** يعمل',
-                        '🎛️ **نظام الغرفة:** مؤقتة',
-                        '🛡️ **نظام الملكية:** مفعل'
-                    ].join('\n')
-                )
-                .setFooter({
-                    text: '3RB ROYAL SYSTEM • Dashboard'
-                })
-                .setTimestamp();
+            const embed =
+                new EmbedBuilder()
+                    .setColor('#2b2d31')
+                    .setTitle(
+                        '⚙️ داشبورد الغرفة'
+                    )
+                    .setDescription(
+                        [
+                            `🎙️ **الغرفة:** ${channel.name}`,
+                            `👑 **المالك:** <@${ownerId}>`,
+                            `👥 **الأعضاء:** ${channel.members.size}`,
+                            `🔢 **الحد:** ${channel.userLimit || 'بلا حدود'}`,
+                            `🌐 **المنطقة:** ${channel.rtcRegion || 'تلقائي'}`,
+                            '',
+                            '🟢 **حالة النظام:** يعمل',
+                            '🎛️ **نظام الغرفة:** مؤقتة',
+                            '🛡️ **نظام الملكية:** مفعل'
+                        ].join('\n')
+                    )
+                    .setFooter({
+                        text:
+                            '3RB ROYAL SYSTEM • Dashboard'
+                    })
+                    .setTimestamp();
 
             return interaction.reply({
                 embeds: [embed],
@@ -1185,7 +1470,8 @@ client.on('interactionCreate', async interaction => {
 
     try {
 
-        const userId = interaction.user.id;
+        const userId =
+            interaction.user.id;
 
         const channelId =
             ownedChannels.get(userId);
@@ -1199,7 +1485,9 @@ client.on('interactionCreate', async interaction => {
         }
 
         const channel =
-            interaction.guild.channels.cache.get(channelId);
+            interaction.guild.channels.cache.get(
+                channelId
+            );
 
         if (!channel) {
 
@@ -1216,11 +1504,16 @@ client.on('interactionCreate', async interaction => {
         // RENAME
         // ========================================================
 
-        if (interaction.customId === 'modal_rename') {
+        if (
+            interaction.customId ===
+            'modal_rename'
+        ) {
 
             const newName =
                 interaction.fields
-                    .getTextInputValue('newName')
+                    .getTextInputValue(
+                        'newName'
+                    )
                     .trim();
 
             if (!newName) {
@@ -1231,7 +1524,9 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            await channel.setName(newName);
+            await channel.setName(
+                newName
+            );
 
             return interaction.reply({
                 content:
@@ -1244,15 +1539,23 @@ client.on('interactionCreate', async interaction => {
         // LIMIT
         // ========================================================
 
-        if (interaction.customId === 'modal_limit') {
+        if (
+            interaction.customId ===
+            'modal_limit'
+        ) {
 
             const value =
                 interaction.fields
-                    .getTextInputValue('newLimit')
+                    .getTextInputValue(
+                        'newLimit'
+                    )
                     .trim();
 
             const limit =
-                Number.parseInt(value, 10);
+                Number.parseInt(
+                    value,
+                    10
+                );
 
             if (
                 Number.isNaN(limit) ||
@@ -1266,7 +1569,9 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            await channel.setUserLimit(limit);
+            await channel.setUserLimit(
+                limit
+            );
 
             return interaction.reply({
                 content:
@@ -1279,17 +1584,25 @@ client.on('interactionCreate', async interaction => {
         // WAITING
         // ========================================================
 
-        if (interaction.customId === 'modal_waiting') {
+        if (
+            interaction.customId ===
+            'modal_waiting'
+        ) {
 
             const message =
                 interaction.fields
-                    .getTextInputValue('waitMsg')
+                    .getTextInputValue(
+                        'waitMsg'
+                    )
                     .trim();
 
             if (!message) {
 
                 await channel.setName(
-                    `⏳ | ${channel.name.replace(/^⏳ \| /, '')}`
+                    `⏳ | ${channel.name.replace(
+                        /^⏳ \| /,
+                        ''
+                    )}`
                 );
 
                 return interaction.reply({
@@ -1300,7 +1613,10 @@ client.on('interactionCreate', async interaction => {
             }
 
             await channel.setName(
-                `⏳ | ${message}`.slice(0, 100)
+                `⏳ | ${message}`.slice(
+                    0,
+                    100
+                )
             );
 
             return interaction.reply({
@@ -1314,14 +1630,21 @@ client.on('interactionCreate', async interaction => {
         // STATUS
         // ========================================================
 
-        if (interaction.customId === 'modal_status') {
+        if (
+            interaction.customId ===
+            'modal_status'
+        ) {
 
             const status =
                 interaction.fields
-                    .getTextInputValue('newStatus')
+                    .getTextInputValue(
+                        'newStatus'
+                    )
                     .trim();
 
-            await channel.setTopic(status).catch(() => {});
+            await channel
+                .setTopic(status)
+                .catch(() => {});
 
             return interaction.reply({
                 content:
@@ -1334,11 +1657,16 @@ client.on('interactionCreate', async interaction => {
         // TRUST
         // ========================================================
 
-        if (interaction.customId === 'modal_trust') {
+        if (
+            interaction.customId ===
+            'modal_trust'
+        ) {
 
             const targetId =
                 interaction.fields
-                    .getTextInputValue('targetUser')
+                    .getTextInputValue(
+                        'targetUser'
+                    )
                     .trim();
 
             const targetMember =
@@ -1373,11 +1701,16 @@ client.on('interactionCreate', async interaction => {
         // UNTRUST
         // ========================================================
 
-        if (interaction.customId === 'modal_untrust') {
+        if (
+            interaction.customId ===
+            'modal_untrust'
+        ) {
 
             const targetId =
                 interaction.fields
-                    .getTextInputValue('targetUser')
+                    .getTextInputValue(
+                        'targetUser'
+                    )
                     .trim();
 
             const targetMember =
@@ -1408,11 +1741,16 @@ client.on('interactionCreate', async interaction => {
         // KICK
         // ========================================================
 
-        if (interaction.customId === 'modal_kick') {
+        if (
+            interaction.customId ===
+            'modal_kick'
+        ) {
 
             const targetId =
                 interaction.fields
-                    .getTextInputValue('targetUser')
+                    .getTextInputValue(
+                        'targetUser'
+                    )
                     .trim();
 
             const targetMember =
@@ -1423,7 +1761,8 @@ client.on('interactionCreate', async interaction => {
             if (
                 !targetMember ||
                 !targetMember.voice.channel ||
-                targetMember.voice.channel.id !== channel.id
+                targetMember.voice.channel.id !==
+                channel.id
             ) {
                 return interaction.reply({
                     content:
@@ -1432,7 +1771,10 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            if (targetId === interaction.user.id) {
+            if (
+                targetId ===
+                interaction.user.id
+            ) {
                 return interaction.reply({
                     content:
                         '❌ لا يمكنك طرد نفسك.',
@@ -1440,7 +1782,8 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            await targetMember.voice.disconnect();
+            await targetMember.voice
+                .disconnect();
 
             return interaction.reply({
                 content:
@@ -1453,14 +1796,22 @@ client.on('interactionCreate', async interaction => {
         // BAN
         // ========================================================
 
-        if (interaction.customId === 'modal_ban') {
+        if (
+            interaction.customId ===
+            'modal_ban'
+        ) {
 
             const targetId =
                 interaction.fields
-                    .getTextInputValue('targetUser')
+                    .getTextInputValue(
+                        'targetUser'
+                    )
                     .trim();
 
-            if (targetId === interaction.user.id) {
+            if (
+                targetId ===
+                interaction.user.id
+            ) {
                 return interaction.reply({
                     content:
                         '❌ لا يمكنك حظر نفسك.',
@@ -1483,9 +1834,12 @@ client.on('interactionCreate', async interaction => {
 
             if (
                 targetMember.voice.channel &&
-                targetMember.voice.channel.id === channel.id
+                targetMember.voice.channel.id ===
+                channel.id
             ) {
-                await targetMember.voice.disconnect().catch(() => {});
+                await targetMember.voice
+                    .disconnect()
+                    .catch(() => {});
             }
 
             await channel.permissionOverwrites.edit(
@@ -1507,11 +1861,16 @@ client.on('interactionCreate', async interaction => {
         // UNBAN
         // ========================================================
 
-        if (interaction.customId === 'modal_unban') {
+        if (
+            interaction.customId ===
+            'modal_unban'
+        ) {
 
             const targetId =
                 interaction.fields
-                    .getTextInputValue('targetUser')
+                    .getTextInputValue(
+                        'targetUser'
+                    )
                     .trim();
 
             await channel.permissionOverwrites
@@ -1529,11 +1888,16 @@ client.on('interactionCreate', async interaction => {
         // REGION
         // ========================================================
 
-        if (interaction.customId === 'modal_region') {
+        if (
+            interaction.customId ===
+            'modal_region'
+        ) {
 
             const region =
                 interaction.fields
-                    .getTextInputValue('newRegion')
+                    .getTextInputValue(
+                        'newRegion'
+                    )
                     .trim()
                     .toLowerCase();
 
@@ -1558,10 +1922,16 @@ client.on('interactionCreate', async interaction => {
                 'russia'
             ];
 
-            if (!allowedRegions.includes(region)) {
+            if (
+                !allowedRegions.includes(
+                    region
+                )
+            ) {
                 return interaction.reply({
                     content:
-                        `❌ المنطقة غير صحيحة.\n\nالمناطق المتاحة:\n\`${allowedRegions.join('` • `')}\``,
+                        `❌ المنطقة غير صحيحة.\n\nالمناطق المتاحة:\n\`${allowedRegions.join(
+                            '` • `'
+                        )}\``,
                     ephemeral: true
                 });
             }
@@ -1585,14 +1955,22 @@ client.on('interactionCreate', async interaction => {
         // OWNER TRANSFER
         // ========================================================
 
-        if (interaction.customId === 'modal_owner') {
+        if (
+            interaction.customId ===
+            'modal_owner'
+        ) {
 
             const targetId =
                 interaction.fields
-                    .getTextInputValue('targetUser')
+                    .getTextInputValue(
+                        'targetUser'
+                    )
                     .trim();
 
-            if (targetId === interaction.user.id) {
+            if (
+                targetId ===
+                interaction.user.id
+            ) {
                 return interaction.reply({
                     content:
                         '❌ أنت مالك الروم بالفعل.',
@@ -1613,14 +1991,13 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            const oldOwnerId = interaction.user.id;
+            const oldOwnerId =
+                interaction.user.id;
 
-            // إزالة صلاحيات المالك القديم
             await channel.permissionOverwrites
                 .delete(oldOwnerId)
                 .catch(() => {});
 
-            // إعطاء الصلاحيات للمالك الجديد
             await channel.permissionOverwrites.edit(
                 targetId,
                 {
@@ -1633,7 +2010,9 @@ client.on('interactionCreate', async interaction => {
                 }
             );
 
-            ownedChannels.delete(oldOwnerId);
+            ownedChannels.delete(
+                oldOwnerId
+            );
 
             ownedChannels.set(
                 targetId,
@@ -1669,8 +2048,11 @@ client.on(
     'voiceStateUpdate',
     async (oldState, newState) => {
 
-        const member = newState.member;
-        const guild = newState.guild;
+        const member =
+            newState.member;
+
+        const guild =
+            newState.guild;
 
         // ========================================================
         // CREATE TEMPORARY ROOM
@@ -1700,11 +2082,13 @@ client.on(
                             ChannelType.GuildVoice,
 
                         parent:
-                            creatorChannel.parentId || null,
+                            creatorChannel.parentId ||
+                            null,
 
                         permissionOverwrites: [
                             {
-                                id: guild.id,
+                                id:
+                                    guild.id,
 
                                 allow: [
                                     PermissionsBitField.Flags.Connect,
@@ -1713,7 +2097,8 @@ client.on(
                             },
 
                             {
-                                id: member.id,
+                                id:
+                                    member.id,
 
                                 allow: [
                                     PermissionsBitField.Flags.ManageChannels,
@@ -1735,7 +2120,9 @@ client.on(
 
                 // نقل العضو
                 await member.voice
-                    .setChannel(voiceChannel)
+                    .setChannel(
+                        voiceChannel
+                    )
                     .catch(() => {});
 
                 console.log(
@@ -1757,7 +2144,8 @@ client.on(
 
         if (
             oldState.channel &&
-            oldState.channel.id !== CREATOR_CHANNEL_ID
+            oldState.channel.id !==
+            CREATOR_CHANNEL_ID
         ) {
 
             const oldChannel =
@@ -1765,15 +2153,19 @@ client.on(
 
             if (
                 oldChannel.type ===
-                ChannelType.GuildVoice &&
+                    ChannelType.GuildVoice &&
                 oldChannel.members.size === 0
             ) {
 
                 const ownerId =
-                    findChannelOwner(oldChannel.id);
+                    findChannelOwner(
+                        oldChannel.id
+                    );
 
                 if (ownerId) {
-                    ownedChannels.delete(ownerId);
+                    ownedChannels.delete(
+                        ownerId
+                    );
                 }
 
                 await oldChannel
@@ -1794,4 +2186,6 @@ client.on(
 // LOGIN
 // ============================================================
 
-client.login(process.env.TOKEN);
+client.login(
+    process.env.TOKEN
+);
