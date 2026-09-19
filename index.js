@@ -75,9 +75,9 @@ client.on('messageCreate', async message => {
                 new ButtonBuilder().setCustomId('t_invite').setLabel('دعوة').setStyle(ButtonStyle.Primary).setEmoji('📞')
             );
 
-            // الصف الثالث من الأزرار
+            // الصف الثالث من الأزرار (تم تصحيح إيموجي الطرد لتجنب الخطأ)
             const row3 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('t_kick').setLabel('طرد').setStyle(ButtonStyle.Danger).setEmoji('٪'),
+                new ButtonBuilder().setCustomId('t_kick').setLabel('طرد').setStyle(ButtonStyle.Danger).setEmoji('🔨'),
                 new ButtonBuilder().setCustomId('t_ban').setLabel('حظر').setStyle(ButtonStyle.Danger).setEmoji('🚫'),
                 new ButtonBuilder().setCustomId('t_unban').setLabel('رفع الحظر').setStyle(ButtonStyle.Success).setEmoji('✅')
             );
@@ -106,7 +106,6 @@ client.on('interactionCreate', async interaction => {
         const userVoiceChannelId = ownedChannels.get(userId);
         const action = interaction.customId.replace('t_', '');
 
-        // زر أخذ الملكية (Claim) لا يتطلب أن يكون المالك الأصلي متواجد إنما يتطلب وجود شخص بالروم
         if (action === 'claim') {
             const memberChannel = interaction.member.voice.channel;
             if (!memberChannel) {
