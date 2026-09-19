@@ -148,29 +148,15 @@ client.on('messageCreate', async message => {
             })
             .setTitle('🎛️ لوحة التحكم الصوتية')
             .setDescription(
-                '✨ **من هنا تتحكم في الروم الصوتي الخاص بك بالكامل** ✨'
-            )
-            .addFields(
-                { name: '✏️', value: 'تغيير الاسم', inline: true },
-                { name: '👥', value: 'حد الأعضاء', inline: true },
-                { name: '🔒', value: 'الخصوصية', inline: true },
-                { name: '💬', value: 'حالة الروم', inline: true },
-                { name: 'ℹ️', value: 'معلومات', inline: true },
-                { name: '🟢', value: 'الثقة', inline: true },
-                { name: '👤', value: 'سحب الثقة', inline: true },
-                { name: '📨', value: 'دعوة', inline: true },
-                { name: '➡️', value: 'طلب انضمام', inline: true },
-                { name: '🔇', value: 'وضع الاجتماع', inline: true },
-                { name: '⚡', value: 'طرد', inline: true },
-                { name: '⛔', value: 'حظر', inline: true },
-                { name: '✅', value: 'رفع الحظر', inline: true },
-                { name: '👑', value: 'أخذ الملكية', inline: true },
-                { name: '🔄', value: 'نقل الملكية', inline: true },
-                { name: '⏳', value: 'غرفة الانتظار', inline: true },
-                { name: '🌐', value: 'تغيير المنطقة', inline: true },
-                { name: '🎨', value: 'لون الحاوية', inline: true },
-                { name: '⚙️', value: 'داشبورد', inline: true },
-                { name: '🗑️', value: 'حذف الروم', inline: true }
+                [
+                    '✨ **من هنا تتحكم في الروم الصوتي الخاص بك بالكامل** ✨',
+                    '',
+                    '`✏️ تغيير الاسم` `👥 حد الأعضاء` `🔒 الخصوصية` `💬 حالة الروم`',
+                    '`ℹ️ معلومات` `🟢 الثقة` `👤 سحب الثقة` `📨 دعوة`',
+                    '`➡️ طلب انضمام` `🔇 وضع الاجتماع` `⚡ طرد` `⛔ حظر`',
+                    '`✅ رفع الحظر` `👑 أخذ الملكية` `🔄 نقل الملكية` `⏳ غرفة الانتظار`',
+                    '`🌐 تغيير المنطقة` `🎨 لون الحاوية` `⚙️ داشبورد` `🗑️ حذف الروم`'
+                ].join('\n')
             )
             .setThumbnail(
                 message.guild.iconURL({ dynamic: true }) || null
