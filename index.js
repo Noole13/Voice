@@ -138,10 +138,10 @@ client.on('messageCreate', async message => {
         // MAIN EMBED
         // ========================================================
 
-        const embed = new EmbedBuilder()
+                const embed = new EmbedBuilder()
             .setColor('#2b2d31')
             .setAuthor({
-                name: '3RB ROYAL SYSTEM',
+                name: '3RB  SYSTEM',
                 iconURL:
                     message.guild.iconURL({ dynamic: true }) ||
                     undefined
@@ -151,18 +151,18 @@ client.on('messageCreate', async message => {
                 [
                     '✨ **من هنا تتحكم في الروم الصوتي الخاص بك بالكامل** ✨',
                     '',
-                    '`✏️ تغيير الاسم` `👥 حد الأعضاء` `🔒 الخصوصية` `💬 حالة الروم`',
-                    '`ℹ️ معلومات` `🟢 الثقة` `👤 سحب الثقة` `📨 دعوة`',
-                    '`➡️ طلب انضمام` `🔇 وضع الاجتماع` `⚡ طرد` `⛔ حظر`',
-                    '`✅ رفع الحظر` `👑 أخذ الملكية` `🔄 نقل الملكية` `⏳ غرفة الانتظار`',
-                    '`🌐 تغيير المنطقة` `🎨 لون الحاوية` `⚙️ داشبورد` `🗑️ حذف الروم`'
+                    '`✏️ تغيير الاسم`  `👥 حد الأعضاء`  `🔒 الخصوصية`  `⏳ غرفة الانتظار`',
+                    '`💬 حالة الروم`  `🟢 الثقة`  `👤 سحب الثقة`  `📨 دعوة`',
+                    '`⚡ طرد`  `🌐 تغيير المنطقة`  `⛔ حظر`  `✅ رفع الحظر`',
+                    '`👑 أخذ الملكية`  `🔄 نقل الملكية`  `🗑️ حذف الروم`  `🎨 لون الحاوية`',
+                    '`🔇 وضع الاجتماع`  `ℹ️ معلومات`  `➡️ طلب انضمام`  `⚙️ داشبورد`'
                 ].join('\n')
             )
             .setThumbnail(
                 message.guild.iconURL({ dynamic: true }) || null
             )
             .setFooter({
-                text: '3RB ROYAL SYSTEM • Voice Management Dashboard'
+                text: '3RB  SYSTEM • Voice Management Dashboard'
             })
             .setTimestamp();
 
