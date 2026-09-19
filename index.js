@@ -141,7 +141,7 @@ client.on('messageCreate', async message => {
         const embed = new EmbedBuilder()
             .setColor('#D4AF37')
             .setAuthor({
-                name: '👑 3RB ROYAL SYSTEM 👑',
+                name: `👑 ${message.guild.name} 👑`,
                 iconURL:
                     message.guild.iconURL({ dynamic: true }) ||
                     undefined
@@ -153,14 +153,15 @@ client.on('messageCreate', async message => {
                     '',
                     '### ✨ 👑 مملكتك الصوتية بين يديك 👑 ✨',
                     '> *من هنا تتحكم في روحك الصوتي بكامل القوة والفخامة* 🔥',
+                    '> 💎 *تجربة ملكية بلا حدود — كل ما تحتاجه بضغطة واحدة* 💎',
                     '',
                     '`━━━━━━━━━━━━━━━━━━━━━━━━━━`',
                     '',
-                    '`✏️\u00A0تغيير\u00A0الاسم` `👥\u00A0حد\u00A0الأعضاء` `🔒\u00A0الخصوصية` `💬\u00A0حالة\u00A0الروم`',
-                    '`ℹ️\u00A0معلومات` `🟢\u00A0الثقة` `👤\u00A0سحب\u00A0الثقة` `📨\u00A0دعوة`',
-                    '`➡️\u00A0طلب\u00A0انضمام` `🔇\u00A0وضع\u00A0الاجتماع` `⚡\u00A0طرد` `⛔\u00A0حظر`',
-                    '`✅\u00A0رفع\u00A0الحظر` `👑\u00A0أخذ\u00A0الملكية` `🔄\u00A0نقل\u00A0الملكية` `⏳\u00A0غرفة\u00A0الانتظار`',
-                    '`🌐\u00A0تغيير\u00A0المنطقة` `🎨\u00A0لون\u00A0الحاوية` `⚙️\u00A0داشبورد` `🗑️\u00A0حذف\u00A0الروم`',
+                    '`✒️\u00A0تغيير\u00A0الاسم` `👥\u00A0حد\u00A0الأعضاء` `🔐\u00A0الخصوصية` `📜\u00A0حالة\u00A0الروم`',
+                    '`📖\u00A0معلومات` `💎\u00A0الثقة` `🚫\u00A0سحب\u00A0الثقة` `💌\u00A0دعوة`',
+                    '`🚪\u00A0طلب\u00A0انضمام` `🔕\u00A0وضع\u00A0الاجتماع` `🥾\u00A0طرد` `⛔\u00A0حظر`',
+                    '`🕊️\u00A0رفع\u00A0الحظر` `👑\u00A0أخذ\u00A0الملكية` `🔁\u00A0نقل\u00A0الملكية` `⏳\u00A0غرفة\u00A0الانتظار`',
+                    '`🌍\u00A0تغيير\u00A0المنطقة` `🎨\u00A0لون\u00A0الحاوية` `📊\u00A0داشبورد` `🗑️\u00A0حذف\u00A0الروم`',
                     '',
                     '`━━━━━━━━━━━━━━━━━━━━━━━━━━`'
                 ].join('\n')
@@ -169,7 +170,7 @@ client.on('messageCreate', async message => {
                 message.guild.iconURL({ dynamic: true }) || null
             )
             .setFooter({
-                text: '⚔️ 3RB ROYAL SYSTEM ⚔️ • Voice Management Dashboard',
+                text: `⚔️ ${message.guild.name} ⚔️ • Voice Management Dashboard`,
                 iconURL:
                     message.guild.iconURL({ dynamic: true }) ||
                     undefined
@@ -185,22 +186,22 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_rename')
-                .setEmoji('✏️')
-                .setStyle(ButtonStyle.Secondary),
+                .setEmoji('✒️')
+                .setStyle(ButtonStyle.Primary),
 
             new ButtonBuilder()
                 .setCustomId('t_limit')
                 .setEmoji('👥')
-                .setStyle(ButtonStyle.Secondary),
+                .setStyle(ButtonStyle.Primary),
 
             new ButtonBuilder()
                 .setCustomId('t_lock')
-                .setEmoji('🔒')
-                .setStyle(ButtonStyle.Secondary),
+                .setEmoji('🔐')
+                .setStyle(ButtonStyle.Primary),
 
             new ButtonBuilder()
                 .setCustomId('t_status')
-                .setEmoji('💬')
+                .setEmoji('📜')
                 .setStyle(ButtonStyle.Secondary)
         );
 
@@ -213,22 +214,22 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_info')
-                .setEmoji('ℹ️')
+                .setEmoji('📖')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_trust')
-                .setEmoji('🟢')
+                .setEmoji('💎')
                 .setStyle(ButtonStyle.Success),
 
             new ButtonBuilder()
                 .setCustomId('t_untrust')
-                .setEmoji('👤')
+                .setEmoji('🚫')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_invite')
-                .setEmoji('📨')
+                .setEmoji('💌')
                 .setStyle(ButtonStyle.Primary)
         );
 
@@ -241,17 +242,17 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_request')
-                .setEmoji('➡️')
+                .setEmoji('🚪')
                 .setStyle(ButtonStyle.Primary),
 
             new ButtonBuilder()
                 .setCustomId('t_meeting')
-                .setEmoji('🔇')
+                .setEmoji('🔕')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
                 .setCustomId('t_kick')
-                .setEmoji('⚡')
+                .setEmoji('🥾')
                 .setStyle(ButtonStyle.Danger),
 
             new ButtonBuilder()
@@ -269,17 +270,17 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_unban')
-                .setEmoji('✅')
+                .setEmoji('🕊️')
                 .setStyle(ButtonStyle.Success),
 
             new ButtonBuilder()
                 .setCustomId('t_claim')
                 .setEmoji('👑')
-                .setStyle(ButtonStyle.Secondary),
+                .setStyle(ButtonStyle.Primary),
 
             new ButtonBuilder()
                 .setCustomId('t_owner')
-                .setEmoji('🔄')
+                .setEmoji('🔁')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
@@ -297,7 +298,7 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_region')
-                .setEmoji('🌐')
+                .setEmoji('🌍')
                 .setStyle(ButtonStyle.Secondary),
 
             new ButtonBuilder()
@@ -307,8 +308,8 @@ client.on('messageCreate', async message => {
 
             new ButtonBuilder()
                 .setCustomId('t_dashboard')
-                .setEmoji('⚙️')
-                .setStyle(ButtonStyle.Secondary),
+                .setEmoji('📊')
+                .setStyle(ButtonStyle.Primary),
 
             new ButtonBuilder()
                 .setCustomId('t_delete')
@@ -577,8 +578,8 @@ client.on('interactionCreate', async interaction => {
 
             const requestEmbed =
                 new EmbedBuilder()
-                    .setColor('#2b2d31')
-                    .setTitle('➡️ طلب انضمام جديد')
+                    .setColor('#D4AF37')
+                    .setTitle('🚪 طلب انضمام جديد')
                     .setDescription(
                         `العضو **${interaction.user.tag}** يريد الانضمام إلى غرفتك الصوتية.`
                     )
@@ -598,7 +599,7 @@ client.on('interactionCreate', async interaction => {
                     )
                     .setFooter({
                         text:
-                            '3RB ROYAL SYSTEM'
+                            interaction.guild.name
                     })
                     .setTimestamp();
 
@@ -1324,9 +1325,9 @@ client.on('interactionCreate', async interaction => {
 
             const embed =
                 new EmbedBuilder()
-                    .setColor('#2b2d31')
+                    .setColor('#D4AF37')
                     .setTitle(
-                        'ℹ️ معلومات الغرفة'
+                        '📖 معلومات الغرفة الملكية'
                     )
                     .addFields(
                         {
@@ -1374,7 +1375,7 @@ client.on('interactionCreate', async interaction => {
                     )
                     .setFooter({
                         text:
-                            '3RB ROYAL SYSTEM'
+                            interaction.guild.name
                     })
                     .setTimestamp();
 
@@ -1395,9 +1396,9 @@ client.on('interactionCreate', async interaction => {
 
             const embed =
                 new EmbedBuilder()
-                    .setColor('#2b2d31')
+                    .setColor('#D4AF37')
                     .setTitle(
-                        '⚙️ داشبورد الغرفة'
+                        '📊 داشبورد الغرفة الملكية'
                     )
                     .setDescription(
                         [
@@ -1414,7 +1415,7 @@ client.on('interactionCreate', async interaction => {
                     )
                     .setFooter({
                         text:
-                            '3RB ROYAL SYSTEM • Dashboard'
+                            `${interaction.guild.name} • Dashboard`
                     })
                     .setTimestamp();
 
