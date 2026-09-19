@@ -33,7 +33,7 @@ const client = new Client({
     ]
 });
 
-const ownedChannels = new Map(); // لربط صاحب الروم بغرفته
+const ownedChannels = new Map();
 const CREATOR_CHANNEL_ID = process.env.CREATOR_CHANNEL_ID;
 
 client.once('ready', () => {
@@ -56,7 +56,7 @@ client.on('messageCreate', async message => {
             const embed = new EmbedBuilder()
                 .setColor('#2b2d31')
                 .setTitle('🎛️ ⠇لوحة التحكم المركزية للرومات الصوتية المؤقتة')
-                .setDescription('مرحباً بك في نظام إدارة الغرف الصوتية الاحترافي.\nاستخدم الأزرار أدناه للتحكم الكامل بغرفتك (تغيير الاسم، القفل، الحد، الطرد، الحظر، الدعوة، والمزيد).\n\n> ⚠️ **ملاحظة هامة:** يجب أن تكون مالكاً للغرفة الصوتية أو متواجدًا داخلها لتتمكن من استخدام خيارات التحكم.')
+                .setDescription('مرحباً بك في نظام إدارة الغرف الصوتية الاحترافي.\nاستخدم الأزرار أدناه للتحكم الكامل بغرفتك.\n\n> ⚠️ **ملاحظة هامة:** يجب أن تكون مالكاً للغرفة الصوتية أو متواجدًا داخلها لتتمكن من استخدام خيارات التحكم.')
                 .setFooter({ text: '3RB ROYAL SYSTEM • Voice Management Dashboard', iconURL: message.guild.iconURL() });
 
             // الصف الأول من الأزرار
@@ -75,16 +75,16 @@ client.on('messageCreate', async message => {
                 new ButtonBuilder().setCustomId('t_invite').setLabel('دعوة').setStyle(ButtonStyle.Primary).setEmoji('📞')
             );
 
-            // الصف الثالث من الأزرار (تم تصحيح إيموجي الطرد لتجنب الخطأ)
+            // الصف الثالث من الأزرار
             const row3 = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('t_kick').setLabel('طرد').setStyle(ButtonStyle.Danger).setEmoji('🔨'),
                 new ButtonBuilder().setCustomId('t_ban').setLabel('حظر').setStyle(ButtonStyle.Danger).setEmoji('🚫'),
                 new ButtonBuilder().setCustomId('t_unban').setLabel('رفع الحظر').setStyle(ButtonStyle.Success).setEmoji('✅')
             );
 
-            // الصف الرابع من الأزرار
+            // الصف الرابع من الأزرار (بدون إيموجي معقد لتجنب أي أخطاء نهائياً)
             const row4 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('t_owner').setLabel('نقل الملكية').setStyle(ButtonStyle.Secondary).setEmoji('⇄'),
+                new ButtonBuilder().setCustomId('t_owner').setLabel('نقل الملكية').setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder().setCustomId('t_claim').setLabel('أخذ الملكية').setStyle(ButtonStyle.Secondary).setEmoji('👑'),
                 new ButtonBuilder().setCustomId('t_delete').setLabel('حذف الروم').setStyle(ButtonStyle.Danger).setEmoji('🗑️')
             );
